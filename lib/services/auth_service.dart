@@ -1,34 +1,20 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import '../models/admin.dart';
-import '../models/votant.dart';
 
 class AuthService {
-  final String baseUrl = "https://mon-api.com/api";
+  final String baseUrl = "http://127.0.0.1:8000/api";
 
-  Future<Admin> loginAdmin(String email, String password) async {
+  Future<Map<String, dynamic>> loginAdmin(String name, String password) async {
     final res = await http.post(
       Uri.parse('$baseUrl/admin/login'),
-      body: {'email': email, 'password': password},
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'name': name, 'password': password}), // ✅ champs corrects
     );
 
     if (res.statusCode == 200) {
-      return Admin.fromJson(jsonDecode(res.body));
+      return jsonDecode(res.body); // contient 'admin' + 'token'
     } else {
-      throw Exception('Erreur de connexion admin');
-    }
-  }
-
-  Future<Votant> loginVotant(String matricule) async {
-    final res = await http.post(
-      Uri.parse('$baseUrl/votants/login'),
-      body: {'matricule': matricule},
-    );
-
-    if (res.statusCode == 200) {
-      return Votant.fromJson(jsonDecode(res.body));
-    } else {
-      throw Exception('Erreur de connexion votant');
+      throw Exception(jsonDecode(res.body)['message'] ?? 'Erreur de connexion admin');
     }
   }
 }

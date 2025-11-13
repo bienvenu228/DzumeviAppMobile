@@ -1,18 +1,25 @@
 import 'dart:convert';
-import 'package:http/http.dart' as http;
 import '../models/vote.dart';
+import 'api_service.dart';
 
 class VoteService {
-  final String baseUrl = "http://127.0.0.1:8000/api";
-
   Future<List<Vote>> getVotes() async {
-    final res = await http.get(Uri.parse('$baseUrl/votes'));
+    final res = await ApiService.get('votes', auth: true);
 
     if (res.statusCode == 200) {
-      final data = jsonDecode(res.body) as List;
-      return data.map((e) => Vote.fromJson(e)).toList();
+      final data = jsonDecode(res.body);
+      return (data['data'] as List).map((e) => Vote.fromJson(e)).toList();
     } else {
       throw Exception('Erreur lors du chargement des votes');
+    }
+  }
+
+  Future<void> createVote(Vote vote) async {
+    final body = vote.toJson();
+    final res = await ApiService.post('votes', body, auth: true);
+
+    if (res.statusCode != 201) {
+      throw Exception('Erreur lors de la création du vote');
     }
   }
 }

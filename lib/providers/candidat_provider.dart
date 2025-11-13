@@ -3,7 +3,6 @@ import '../models/candidat.dart';
 import '../services/candidat_service.dart';
 
 class CandidatProvider with ChangeNotifier {
-  final CandidatService _service = CandidatService();
   List<Candidat> candidats = [];
   bool isLoading = false;
 
@@ -11,7 +10,14 @@ class CandidatProvider with ChangeNotifier {
     isLoading = true;
     notifyListeners();
 
-    candidats = await _service.getCandidatsByVote(voteId);
+    try {
+      // ⚡ Appel statique via la classe, pas via une instance
+      candidats = await CandidatService.getCandidatsByVote(voteId);
+    } catch (e) {
+      // Gérer l'erreur si nécessaire
+      debugPrint("Erreur lors du chargement des candidats : $e");
+      candidats = [];
+    }
 
     isLoading = false;
     notifyListeners();
