@@ -5,6 +5,7 @@ import 'package:dzumevimobile/screens/candidat.detail.dart';
 import 'package:dzumevimobile/screens/candidatListPage.dart';
 import 'package:dzumevimobile/screens/vote.detail.dart';
 import 'package:flutter/material.dart';
+import 'screens/home_screen.dart';
 
 void main() {
   runApp(const MyApp());

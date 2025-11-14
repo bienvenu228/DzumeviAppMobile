@@ -1,15 +1,35 @@
+import 'package:dzumevimobile/screens/home_screen.dart';
 import 'package:flutter/material.dart';
 
-class MyWidget extends StatefulWidget {
-  const MyWidget({super.key});
+class LoginScreen extends StatefulWidget {
+  const LoginScreen({super.key});
 
   @override
-  State<MyWidget> createState() => _MyWidgetState();
+  State<LoginScreen> createState() => _LoginScreenState();
 }
 
-class _MyWidgetState extends State<MyWidget> {
+class _LoginScreenState extends State<LoginScreen> {
+  final emailCtrl = TextEditingController();
+  final passwordCtrl = TextEditingController();
+
   @override
   Widget build(BuildContext context) {
-    return const Placeholder();
+    return Scaffold(
+      appBar: AppBar(title: const Text('Connexion')),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          children: [
+            TextField(controller: emailCtrl, decoration: const InputDecoration(labelText: 'Email')),
+            TextField(controller: passwordCtrl, decoration: const InputDecoration(labelText: 'Mot de passe'), obscureText: true),
+            const SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: () => Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const HomeScreen())),
+              child: const Text('Se connecter'),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
