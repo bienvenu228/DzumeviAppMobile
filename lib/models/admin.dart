@@ -13,10 +13,11 @@ class Admin {
 
   factory Admin.fromJson(Map<String, dynamic> json) {
     return Admin(
-      id: json['id'],
-      nom: json['nom'],
-      email: json['email'],
-      password: json['password'],
+      // Assurez-vous que le casting est correct pour la null safety
+      id: json['id'] as int,
+      nom: json['nom'] as String,
+      email: json['email'] as String,
+      password: json['password'] as String,
     );
   }
 
@@ -26,4 +27,6 @@ class Admin {
         'email': email,
         'password': password,
       };
+
+  // Ligne 'bool operator [](String other) {}' supprimée.
 }
