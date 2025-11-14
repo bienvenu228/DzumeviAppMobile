@@ -1,109 +1,128 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:flutter_secure_storage/flutter_secure_storage.dart'; // NOUVEL IMPORT
 import '../models/admin.dart';
 import '../models/votant.dart';
 
-// Importez votre service de stockage ici (ex: import 'package:flutter_secure_storage/flutter_secure_storage.dart';)
-
 class AuthService {
-  final String baseUrl = "https://mon-api.com/api";
+  final String baseUrl = "https://http://127.0.0.1:8000/api";
   
-  // NOTE: Dans une vraie application, vous devriez utiliser un service sécurisé
-  // pour stocker le token au lieu de cette ligne.
-  // final storage = const FlutterSecureStorage(); 
+  // Instance du service de stockage sécurisé
+  final storage = const FlutterSecureStorage(); 
 
-  // --- Méthodes de Connexion (Laissées intactes) ---
+  // --- Méthode de Connexion Administrateur (Mise à jour pour le token et JSON) ---
 
   Future<Admin> loginAdmin(String email, String password) async {
     final res = await http.post(
       Uri.parse('$baseUrl/admin/login'),
-      body: {'email': email, 'password': password},
+      // Ajout du header Content-Type pour spécifier l'envoi en JSON
+      headers: {'Content-Type': 'application/json'},
+      // Envoi du corps de la requête encodé en JSON
+      body: jsonEncode({'email': email, 'password': password}),
     );
 
     if (res.statusCode == 200) {
-      // TODO: Stocker le token de l'admin après la connexion réussie
-      return Admin.fromJson(jsonDecode(res.body));
+      final Map<String, dynamic> jsonResponse = jsonDecode(res.body);
+      
+      // ASSUMER que l'API retourne : {"token": "...", "admin": {...}}
+      final String token = jsonResponse['token'] as String;
+      final Map<String, dynamic> adminJson = jsonResponse['admin'] as Map<String, dynamic>;
+
+      // 1. Stocker le token de l'admin après la connexion réussie
+      await storage.write(key: 'jwt_token', value: token);
+      
+      // 2. Stocker le type d'utilisateur pour la vérification rapide
+      await storage.write(key: 'user_type', value: 'admin');
+
+      return Admin.fromJson(adminJson);
     } else {
-      throw Exception('Erreur de connexion admin');
+      // Tentative d'extraction du message d'erreur de l'API
+      try {
+        final errorBody = jsonDecode(res.body);
+        final message = errorBody['message'] ?? 'Erreur inconnue de connexion admin';
+        throw Exception(message);
+      } catch (_) {
+        throw Exception('Erreur de connexion admin. Statut: ${res.statusCode}');
+      }
     }
   }
 
+  // --- Méthode de Connexion Votant (Mise à jour pour le token et JSON) ---
+  
   Future<Votant> loginVotant(String matricule) async {
     final res = await http.post(
       Uri.parse('$baseUrl/votants/login'),
-      body: {'matricule': matricule},
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'matricule': matricule}),
     );
 
     if (res.statusCode == 200) {
-      // TODO: Stocker le token du votant après la connexion réussie
-      return Votant.fromJson(jsonDecode(res.body));
+      final Map<String, dynamic> jsonResponse = jsonDecode(res.body);
+      
+      // ASSUMER que l'API retourne : {"token": "...", "votant": {...}}
+      final String token = jsonResponse['token'] as String;
+      final Map<String, dynamic> votantJson = jsonResponse['votant'] as Map<String, dynamic>;
+
+      // Stocker le token et le type
+      await storage.write(key: 'jwt_token', value: token);
+      await storage.write(key: 'user_type', value: 'votant');
+      
+      return Votant.fromJson(votantJson);
     } else {
-      throw Exception('Erreur de connexion votant');
+       try {
+        final errorBody = jsonDecode(res.body);
+        final message = errorBody['message'] ?? 'Erreur inconnue de connexion votant';
+        throw Exception(message);
+      } catch (_) {
+        throw Exception('Erreur de connexion votant. Statut: ${res.statusCode}');
+      }
     }
   }
 
+  // --- Logique de Déconnexion (Ajoutée pour un service complet) ---
+  Future<void> logout() async {
+    await storage.delete(key: 'jwt_token');
+    await storage.delete(key: 'user_type');
+  }
+
   // -------------------------------------------------------------------
-  // --- CORRECTION 1 : isAuthenticated doit retourner Future<bool> ---
+  // --- isAuthenticated utilise le stockage sécurisé et vérifie l'API ---
   // -------------------------------------------------------------------
 
   Future<bool> isAuthenticated() async {
-    // 1. Récupérer le token stocké localement
-    // String? token = await storage.read(key: 'jwt_token'); 
+    String? token = await storage.read(key: 'jwt_token'); 
     
-    // Pour l'exemple, supposons que nous récupérons le token d'un placeholder
-    String? token = "TEMP_TOKEN"; // REMPLACER PAR LA LOGIQUE DE STOCKAGE
-
     if (token == null) {
-      return false; // Pas de token stocké, donc pas authentifié
+      return false; 
     }
     
-    // 2. Vérifier si le token est valide auprès de l'API
-    final res = await http.get(
-      Uri.parse('$baseUrl/votants/me'),
-      headers: {'Authorization': 'Bearer $token'},
-    );
+    // 2. Vérifier si le token est valide auprès de l'API (Endpoint /auth/me recommandé)
+    try {
+      final res = await http.get(
+        Uri.parse('$baseUrl/auth/me'), // Endpoint de vérification de session
+        headers: {'Authorization': 'Bearer $token'},
+      );
 
-    // 3. Retourner true si le token est accepté (Status 200)
-    if (res.statusCode == 200) {
-      return true;
-    } else {
-      // Optionnel : Effacer le token s'il est invalide (401, 403)
-      // await storage.delete(key: 'jwt_token'); 
+      if (res.statusCode == 200) {
+        return true;
+      } else {
+        // Effacer le token s'il est invalide (401, 403)
+        await storage.delete(key: 'jwt_token'); 
+        await storage.delete(key: 'user_type');
+        return false;
+      }
+    } catch (e) {
+      // Gérer les erreurs de réseau (pas de connexion)
       return false;
     }
   }
 
   // -------------------------------------------------------------------
-  // --- CORRECTION 2 : getUserType doit retourner Future<String> ---
+  // --- getUserType utilise le type stocké localement (optimisation) ---
   // -------------------------------------------------------------------
 
-  Future<String> getUserType() async {
-    // 1. Récupérer le token (similaire à isAuthenticated)
-    // String? token = await storage.read(key: 'jwt_token');
-    String? token = "TEMP_TOKEN"; // REMPLACER PAR LA LOGIQUE DE STOCKAGE
-
-    if (token == null) {
-      // Si on n'a pas de token, on ne peut pas être authentifié, on lance une erreur
-      throw Exception('Tentative de récupérer le type utilisateur sans token.');
-    }
-
-    final res = await http.get(
-      Uri.parse('$baseUrl/user/type'),
-      headers: {'Authorization': 'Bearer $token'}, // L'API a besoin de l'auth pour savoir qui vous êtes
-    );
-    
-    if (res.statusCode == 200) {
-      final jsonResponse = jsonDecode(res.body);
-      
-      // Assurez-vous que votre API retourne bien une structure qui contient le 'type'
-      if (jsonResponse.containsKey('type')) {
-        return jsonResponse['type'] as String; // Doit retourner 'admin' ou 'votant'
-      } else {
-        throw Exception("API response missing 'type' field.");
-      }
-    } else {
-      // Si la vérification échoue, on suppose qu'on ne peut pas déterminer le type
-      throw Exception('Failed to fetch user type. Status Code: ${res.statusCode}');
-    }
+  Future<String?> getUserType() async {
+    // Retourne 'admin', 'votant', ou null si non trouvé
+    return await storage.read(key: 'user_type');
   }
 }

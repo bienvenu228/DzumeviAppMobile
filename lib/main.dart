@@ -1,8 +1,10 @@
 import 'package:dzumevimobile/screens/Admin/admin.edit.dart';
 import 'package:dzumevimobile/screens/Admin/dashboard.dart';
+import 'package:dzumevimobile/screens/Admin/login.dart';
 import 'package:dzumevimobile/screens/Admin/vote.liste.dart';
 import 'package:dzumevimobile/screens/candidat.detail.dart';
 import 'package:dzumevimobile/screens/candidatListPage.dart';
+import 'package:dzumevimobile/screens/login_page.dart';
 import 'package:dzumevimobile/screens/vote.detail.dart';
 import 'package:dzumevimobile/screens/voteListPage.dart';
 import 'package:flutter/material.dart';
@@ -136,7 +138,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   final List<Widget> _widgetOptions = <Widget>[
     CandidatListPage(), // Écran 0: Candidats
     VoteScreen(),       // Écran 1: Votes
-    AdminDashboard(),   // Écran 2: Dashboard Admin
+    LoginPage(),   // Écran 2: Dashboard Admin
   ];
 
   void _onItemTapped(int index) {
