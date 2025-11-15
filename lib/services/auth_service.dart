@@ -9,7 +9,7 @@ class AuthService {
   
   // Instance du service de stockage sécurisé
   final storage = const FlutterSecureStorage(); 
-
+  
   // --- Méthode de Connexion Administrateur (Mise à jour pour le token et JSON) ---
 
   Future<Admin> loginAdmin(String email, String password) async {
