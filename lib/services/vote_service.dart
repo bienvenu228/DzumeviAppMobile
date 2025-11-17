@@ -15,4 +15,28 @@ class VoteService {
       throw Exception('Erreur lors du chargement des votes');
     }
   }
+
+  Future<void> createVote(Map<String, dynamic> body) async {
+    final res = await http.post(
+      Uri.parse('$baseUrl/votes'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode(body),
+    );
+
+    if (res.statusCode != 201) {
+      throw Exception('Erreur lors de la création du vote');
+    }
+  }
+
+  Future<void> updateVote(int voteId, Map<String, dynamic> body) async {
+    final res = await http.put(
+      Uri.parse('$baseUrl/votes/$voteId'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode(body),
+    );
+
+    if (res.statusCode != 200) {
+      throw Exception('Erreur lors de la mise à jour du vote');
+    }
+  }
 }
