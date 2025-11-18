@@ -1,32 +1,71 @@
+// services/vote_service.dart
+
 import 'dart:convert';
-import '../models/vote.dart';
+import 'package:http/http.dart' as http;
 import 'api_service.dart';
 
+// Classe Vote minimale pour le mapping (À compléter si nécessaire)
+class Vote {
+  final int id;
+  final String name;
+  final String statuts;
+  
+  Vote({required this.id, required this.name, required this.statuts});
+
+  factory Vote.fromJson(Map<String, dynamic> json) {
+    return Vote(
+      id: json['id'] as int,
+      name: json['name'] as String,
+      statuts: json['statuts'] as String,
+    );
+  }
+}
+
 class VoteService {
-  Future<List<Vote>> getVotes() async {
-    final res = await ApiService.get('votes');
+  
+  // Implémente VoteController@index
+  static Future<List<Vote>> fetchAllVotes() async {
+    final url = Uri.parse('${ApiService.baseUrl}/votes'); // Assurez-vous que la route est /api/votes
+    final response = await http.get(url, headers: ApiService.getHeaders());
 
-    if (res.statusCode == 200) {
-      final list = jsonDecode(res.body) as List;
-      return list.map((e) => Vote.fromJson(e)).toList();
-    }
-
-    throw Exception("Erreur lors du chargement des votes");
-  }
-
-  Future<void> createVote(Map<String, dynamic> body) async {
-    final res = await ApiService.post('votes', body, withAuth: true);
-
-    if (res.statusCode != 201) {
-      throw Exception("Erreur de création du vote");
-    }
-  }
-
-  Future<void> updateVote(int voteId, Map<String, dynamic> body) async {
-    final res = await ApiService.put('votes/$voteId', body, withAuth: true);
-
-    if (res.statusCode != 200) {
-      throw Exception("Erreur de mise à jour du vote");
+    if (response.statusCode == 200) {
+      final jsonResponse = json.decode(response.body);
+      
+      if (jsonResponse['status'] == 'success' && jsonResponse['data'] is List) {
+        final List<dynamic> data = jsonResponse['data'];
+        return data.map((json) => Vote.fromJson(json)).toList();
+      }
+      throw Exception(jsonResponse['message'] ?? 'Format de réponse des votes invalide.');
+    } else {
+      throw Exception('Échec de la récupération de la liste des votes. Statut: ${response.statusCode}');
     }
   }
+
+  Future<dynamic> getVotes() async {
+    // ⚠️ Remplacez 'votes/summary' par votre endpoint API réel.
+    // Votre URL d'API devra être ajustée pour ne pas nécessiter d'ID
+    final url = Uri.parse('${ApiService.baseUrl}/votes/all_summary');
+
+    try {
+      final response = await http.get(url, headers: ApiService.getHeaders());
+
+      if (response.statusCode == 200) {
+        final jsonResponse = json.decode(response.body);
+        
+        // Assurez-vous que la réponse correspond au format attendu de votre API
+        if (jsonResponse['status'] == 'success') {
+          // Si cette méthode est utilisée pour obtenir des statistiques (nombre total de votes, etc.)
+          return jsonResponse['data']; // Retourne les données brutes pour traitement
+        }
+        throw Exception(jsonResponse['message'] ?? 'Format de réponse API invalide.');
+      } else {
+        throw Exception('Échec du chargement des votes: Statut ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Erreur dans getVotes: $e');
+      rethrow;
+    }
+  }
+
+  // NOTE: Les méthodes store/show/update/destroy sont omises ici.
 }

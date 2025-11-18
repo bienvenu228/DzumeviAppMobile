@@ -6,7 +6,7 @@ import '../models/votant.dart';
 import 'api_service.dart';
 
 class AuthService {
-  final String baseUrl = "http://127.0.0.1:8000/api";
+  final String baseUrl = "http://192.168.0.212/Dzumevi_APi/public/api";
   final storage = const FlutterSecureStorage();
 
   Future<Admin> loginAdmin(String email, String password) async {
@@ -24,8 +24,6 @@ class AuthService {
 
       await storage.write(key: 'jwt_token', value: token);
       await storage.write(key: 'user_type', value: 'admin');
-
-      ApiService.setAuthToken(token);
 
       return Admin.fromJson(adminJson);
     }
@@ -49,8 +47,6 @@ class AuthService {
       await storage.write(key: 'jwt_token', value: token);
       await storage.write(key: 'user_type', value: 'votant');
 
-      ApiService.setAuthToken(token);
-
       return Votant.fromJson(votantJson);
     }
 
@@ -60,14 +56,12 @@ class AuthService {
   Future<void> logout() async {
     await storage.delete(key: 'jwt_token');
     await storage.delete(key: 'user_type');
-    ApiService.setAuthToken("");
   }
 
   Future<bool> isAuthenticated() async {
     final token = await storage.read(key: 'jwt_token');
     if (token == null) return false;
 
-    ApiService.setAuthToken(token);
 
     try {
       final res = await http.get(

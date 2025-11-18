@@ -1,137 +1,220 @@
 import 'package:flutter/material.dart';
-import '../services/payment_service.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import '../services/payment_service.dart'; // Assurez-vous que ce chemin est correct
+import '../services/api_service.dart';    // Assurez-vous que ce chemin est correct
 
-// --- Modèle Candidat pour l'exemple (à supprimer si vous l'avez déjà dans candidat.dart) ---
+
+// ====================================================================
+// --- MODÈLE CANDIDAT (CORRIGÉ) ---
+// ====================================================================
 class Candidat {
   final int id;
-  final String nom;
-  final String categorie; // Utilisé pour la ville/l'origine sur la capture
-  final String descriptionShort;
-  final String photo;
-  int votes; // Rendu non nullable car essentiel au classement
+  final String? lastname; 
   final String firstname;
-  final int age; // Ajouté pour l'âge
-  
+  final String maticule;
+  final String categorie;
+  final String? description;
+  final String? photo;
+  // ⭐️ CORRECTION : 'votes' n'est PLUS final pour pouvoir être mis à jour (même si le re-fetch est préféré)
+  int votes; 
+  final int age; 
+  final int voteId;
+
   Candidat({
     required this.id,
-    required this.nom,
-    required this.categorie,
-    required this.descriptionShort,
-    required this.photo,
-    required this.votes, 
+    this.lastname,
     required this.firstname,
+    required this.maticule,
+    required this.categorie,
+    this.description,
+    this.photo,
+    required this.votes,
     required this.age,
+    required this.voteId,
   });
+
+  factory Candidat.fromJson(Map<String, dynamic> json) {
+    return Candidat(
+      id: (json['id'] as num).toInt(),
+      lastname: json['lastname'] as String?,
+      firstname: json['firstname'] as String,
+      maticule: json['maticule'] as String,
+      categorie: json['categorie'] as String,
+      description: json['description'] as String?,
+      photo: json['photo'] as String?,
+      // Utilisation de 'num' pour gérer int ou double dans le JSON
+      votes: (json['votes'] as num? ?? 0).toInt(), 
+      age: (json['age'] as num? ?? 20).toInt(),
+      voteId: (json['vote_id'] as num).toInt(),
+    );
+  }
 }
-// -----------------------------------------------------------------------------------
+
+// ====================================================================
+// --- SERVICE DE CANDIDAT MINIMAL (Gardé ici pour la simplicité) ---
+// Note : Idéalement, ce code devrait être dans services/candidat_service.dart
+// ====================================================================
+class CandidatService {
+  static Future<List<Candidat>> fetchAllCandidats() async {
+    final url = Uri.parse('${ApiService.baseUrl}/candidats'); 
+    final response = await http.get(url, headers: ApiService.getHeaders());
+
+    if (response.statusCode == 200) {
+      final jsonResponse = json.decode(response.body);
+      
+      if (jsonResponse['status'] == 'success' && jsonResponse['data'] is List) {
+        final List<dynamic> data = jsonResponse['data'];
+        return data.map((json) => Candidat.fromJson(json)).toList();
+      }
+      throw Exception(jsonResponse['message'] ?? 'Format de réponse invalide.');
+    } else {
+      throw Exception('Échec du chargement des candidats: Statut ${response.statusCode}');
+    }
+  }
+}
 
 
+// ====================================================================
 // --- WIDGET PRINCIPAL : CANDIDAT LIST PAGE ---
+// ====================================================================
 class CandidatListPage extends StatefulWidget {
-  CandidatListPage({super.key});
+  const CandidatListPage({super.key});
 
   @override
   State<CandidatListPage> createState() => _CandidatListPageState();
 }
 
 class _CandidatListPageState extends State<CandidatListPage> {
-  // Liste de données d'exemple (Remplacez ceci par votre appel API)
-  late List<Candidat> candidats;
+  
+  List<Candidat> candidats = [];
+  bool _isLoading = true;
+  String? _error;
 
   @override
   void initState() {
     super.initState();
-    // Initialisation et tri des candidats par votes
-    candidats = [
-      Candidat(id: 1, nom: 'Mensah', firstname: 'Akosua', categorie: 'Lomé', descriptionShort: 'Étudiante en commerce international, passionnée de mode et de développement communautaire...', photo: 'assets/akosua_mensah.png', votes: 1247, age: 22),
-      Candidat(id: 2, nom: 'Koffi', firstname: 'Afi', categorie: 'Kara', descriptionShort: 'Artiste et danseuse traditionnelle, défenseure de la culture togolaise...', photo: 'assets/afi_koffi.png', votes: 892, age: 21),
-      Candidat(id: 3, nom: 'Ablavi', firstname: 'Efua', categorie: 'Sokodé', descriptionShort: 'Entrepreneure sociale et militante pour l\'éducation des jeunes filles. Fondatrice d\'une association...', photo: 'assets/efua_ablavi.png', votes: 1156, age: 23),
-      Candidat(id: 4, nom: 'Tetteh', firstname: 'Adjoa', categorie: 'Atakpamé', descriptionShort: 'Étudiante en médecine et bénévole dans les centres de santé ruraux. Passionnée par la santé maternelle...', photo: 'assets/adjoa_tetteh.png', votes: 743, age: 20),
-      Candidat(id: 5, nom: 'Dzigbodi', firstname: 'Ama', categorie: 'Tsévié', descriptionShort: 'Ingénieure en informatique et développeuse d\'applications mobiles. Travaille sur des solutions...', photo: 'assets/ama_dzigbodi.png', votes: 634, age: 24),
-      Candidat(id: 6, nom: 'Kpegba', firstname: 'Abla', categorie: 'Aného', descriptionShort: 'Journaliste et blogueuse, spécialisée dans les questions de développement durable. Couvre les enjeux...', photo: 'assets/abla_kpegba.png', votes: 987, age: 22),
-      Candidat(id: 7, nom: 'Agbeko', firstname: 'Yawa', categorie: 'Dapaong', descriptionShort: 'Athlète de haut niveau en athlétisme, représentante du Togo dans les compétitions internationales...', photo: 'assets/yawa_agbeko.png', votes: 1089, age: 21),
-      Candidat(id: 8, nom: 'Amegavi', firstname: 'Dela', categorie: 'Bassar', descriptionShort: 'Agricultrice moderne et promotrice de l\'agriculture durable. Développe des techniques agricoles innovantes...', photo: 'assets/dela_amegavi.png', votes: 567, age: 23),
-    ]..sort((a, b) => b.votes.compareTo(a.votes)); // Tri décroissant pour le classement
+    _fetchCandidats(); 
   }
 
-  // --- Gestion du vote avec paiement ---
-Future<void> _handleVote(int candidatId) async {
-  final candidat = candidats.firstWhere((c) => c.id == candidatId);
-
-  // 1️⃣ Choix du type de paiement
-  String? paymentType = await showDialog<String>(
-    context: context,
-    builder: (context) => AlertDialog(
-      title: const Text("Choisir le moyen de paiement"),
-      content: const Text("1 vote = 100 FCFA"),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context, "TMoney"),
-          child: const Text("TMoney"),
-        ),
-        TextButton(
-          onPressed: () => Navigator.pop(context, "Flooz"),
-          child: const Text("Flooz"),
-        ),
-      ],
-    ),
-  );
-
-  if (paymentType == null) return; // Annulé
-
-  // 2️⃣ Demande du numéro de téléphone
-  final phoneController = TextEditingController();
-  bool? confirmed = await showDialog<bool>(
-    context: context,
-    builder: (context) => AlertDialog(
-      title: const Text("Numéro de téléphone"),
-      content: TextField(
-        controller: phoneController,
-        keyboardType: TextInputType.phone,
-        decoration: const InputDecoration(hintText: "Ex: 90XXXXXXXX"),
-      ),
-      actions: [
-        TextButton(onPressed: () => Navigator.pop(context, false), child: const Text("Annuler")),
-        TextButton(onPressed: () => Navigator.pop(context, true), child: const Text("Payer")),
-      ],
-    ),
-  );
-
-  if (confirmed != true || phoneController.text.isEmpty) return;
-
-  // 3️⃣ Paiement via PaymentService
-  final successPayment = await PaymentService.makePayment(
-    phoneNumber: phoneController.text,
-    amount: 100,
-    type: paymentType,
-  );
-
-  if (!successPayment) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("Paiement échoué, réessayez.")),
-    );
-    return;
-  }
-
-  // 4️⃣ Vote après paiement réussi
-  final successVote = await PaymentService.voteCandidat(candidat.id);
-  if (successVote) {
-    setState(() {
-      candidat.votes += 1;
-      candidats.sort((a, b) => b.votes.compareTo(a.votes));
-    });
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text("Vote pour ${candidat.firstname} enregistré !")),
-    );
-  } else {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("Vote échoué après paiement.")),
-    );
+  // Fonction de récupération des données depuis l'API
+  // DANS _CandidatListPageState
+Future<void> _fetchCandidats() async {
+  // ...
+  try {
+    // Si vous voulez tous les candidats (par défaut):
+    final fetchedCandidats = await CandidatService.fetchAllCandidats(); 
+    
+    // OU si vous utilisez un ID de vote spécifique (ex: 1):
+    // final fetchedCandidats = await CandidatService.getCandidatsByVote(1); 
+    
+    // ...
+  } catch (e) {
+    // ...
   }
 }
 
+  // --- Gestion du vote avec paiement ---
+  Future<void> _handleVote(int candidatId) async {
+    // Utilisation de firstWhere avec orElse pour éviter une exception si le candidat n'est pas trouvé
+    final candidat = candidats.firstWhere(
+      (c) => c.id == candidatId,
+      orElse: () => throw Exception('Candidat non trouvé.'),
+    );
 
-  // Couleurs personnalisées pour le dégradé de l'en-tête
+    // 1️⃣ Choix du type de paiement
+    String? paymentType = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("Choisir le moyen de paiement"),
+        content: const Text("1 vote = 100 FCFA"),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, "mtn_open"), 
+            child: const Text("TMoney"),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, "moov"), 
+            child: const Text("Flooz"),
+          ),
+        ],
+      ),
+    );
+
+    if (paymentType == null) return; 
+
+    // 2️⃣ Demande des informations utilisateur
+    final nameController = TextEditingController();
+    final emailController = TextEditingController();
+    final phoneController = TextEditingController();
+
+    bool? confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text("Informations pour le paiement ($paymentType)"),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(controller: nameController, decoration: const InputDecoration(labelText: "Nom Complet")),
+              TextField(controller: emailController, decoration: const InputDecoration(labelText: "Email"), keyboardType: TextInputType.emailAddress),
+              TextField(controller: phoneController, decoration: const InputDecoration(labelText: "Numéro de téléphone"), keyboardType: TextInputType.phone),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text("Annuler")),
+          TextButton(onPressed: () => Navigator.pop(context, true), child: const Text("Payer et Voter")),
+        ],
+      ),
+    );
+
+    if (confirmed != true || nameController.text.isEmpty || phoneController.text.isEmpty || emailController.text.isEmpty) return;
+    
+    // 3️⃣ Paiement via PaymentService
+    try {
+      final transactionResult = await PaymentService.initiatePayment(
+        name: nameController.text,
+        email: emailController.text,
+        phoneNumber: phoneController.text,
+        country: "TG", 
+        amount: 100.0,
+        currency: "XOF",
+        description: "Vote pour ${candidat.firstname} (ID: ${candidat.id})",
+        mode: paymentType,
+      );
+
+      if (transactionResult['success'] == true) {
+        // Affiche un message de succès du DÉMARRAGE de la transaction FedaPay
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Paiement initié. Suivez les instructions sur votre téléphone. Rafraîchissement des votes en cours...")),
+        );
+
+        // ⭐️ LOGIQUE SÉCURISÉE : Re-fetch des données depuis le serveur après un délai
+        // (Assume que le webhook de confirmation FedaPay a eu le temps d'incrémenter le vote côté Laravel)
+        await Future.delayed(const Duration(seconds: 4)); 
+        await _fetchCandidats(); 
+        
+        // Afficher la confirmation après la mise à jour
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Vote pour ${candidat.firstname} confirmé et classement mis à jour !")),
+        );
+        
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Paiement échoué: ${transactionResult['message']}")),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Erreur de transaction: $e")),
+      );
+    }
+  }
+
+
+  // ... (Méthode build et les classes de widgets dédiés non modifiées) ...
+
   final List<Color> _headerGradient = const [
     Color(0xFF8E24AA), // Violet foncé
     Color(0xFFE53935), // Rouge clair
@@ -139,6 +222,26 @@ Future<void> _handleVote(int candidatId) async {
 
   @override
   Widget build(BuildContext context) {
+    if (_isLoading) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+    
+    if (_error != null || candidats.isEmpty) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Candidats')),
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(_error ?? 'Aucun candidat trouvé.', style: const TextStyle(color: Colors.red)),
+              const SizedBox(height: 20),
+              ElevatedButton(onPressed: _fetchCandidats, child: const Text('Réessayer le chargement')),
+            ],
+          ),
+        ),
+      );
+    }
+
     // Calcul du total des votes pour l'affichage
     final int totalVotes = candidats.fold(0, (sum, item) => sum + item.votes);
     // Les trois meilleurs candidats
@@ -174,10 +277,10 @@ Future<void> _handleVote(int candidatId) async {
                   
                   GridView.builder(
                     shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(), // Important pour le SingleChildScrollView
+                    physics: const NeverScrollableScrollPhysics(), 
                     itemCount: remainingCandidats.length,
                     gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-                      maxCrossAxisExtent: 300, // Adaptez le nombre de colonnes
+                      maxCrossAxisExtent: 300, 
                       childAspectRatio: 0.6, 
                       crossAxisSpacing: 16.0,
                       mainAxisSpacing: 16.0,
@@ -215,12 +318,8 @@ class _HeaderSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      // === MODIFICATION CLÉ ===
-      // Garantit que le Container prend toute la largeur de son parent (l'écran, dans ce cas)
       width: double.infinity, 
-      // === RÉINTÉGRATION DU PADDING ===
       padding: EdgeInsets.only(top: MediaQuery.of(context).padding.top + 20, bottom: 40),
-      // ==================================
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: gradientColors,
@@ -230,7 +329,6 @@ class _HeaderSection extends StatelessWidget {
       ),
       child: Column(
         children: [
-          // Icône Couronne
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
@@ -244,8 +342,6 @@ class _HeaderSection extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 15),
-          
-          // Titre
           const Text(
             'Concours Miss Togo',
             style: TextStyle(
@@ -263,8 +359,6 @@ class _HeaderSection extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 10),
-          
-          // Slogan
           const Text(
             'Votez pour votre candidate préférée',
             style: TextStyle(
@@ -273,8 +367,6 @@ class _HeaderSection extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 20),
-          
-          // Bloc Prix du vote
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 8),
             decoration: BoxDecoration(
@@ -297,8 +389,6 @@ class _HeaderSection extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 10),
-          
-          // Séparateur étoile
           const Icon(Icons.star, color: Colors.white38, size: 20),
         ],
       ),
@@ -318,7 +408,6 @@ class _RankingSection extends StatelessWidget {
     required this.allCandidats,
   });
   
-  // Définit la couleur de l'icône de classement
   Color _getRankColor(int rank) {
     switch (rank) {
       case 1:
@@ -351,15 +440,10 @@ class _RankingSection extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Titre de la section de classement
           _buildRankingHeader(totalVotes),
           const SizedBox(height: 20),
-          
-          // 3 Meilleurs Candidats en haut (Vue "Hero")
           _buildTopThreeHero(topThree),
           const SizedBox(height: 20),
-          
-          // Liste détaillée du classement
           ...allCandidats.asMap().entries.map((entry) {
             int rank = entry.key + 1;
             Candidat candidat = entry.value;
@@ -370,11 +454,10 @@ class _RankingSection extends StatelessWidget {
     );
   }
   
-  // Widget pour l'en-tête de la carte de classement
   Widget _buildRankingHeader(int totalVotes) {
     return Row(
       children: [
-        Icon(Icons.bar_chart, color: const Color(0xFF9C27B0)),
+        const Icon(Icons.bar_chart, color: Color(0xFF9C27B0)),
         const SizedBox(width: 8),
         Expanded(
           child: Column(
@@ -400,23 +483,27 @@ class _RankingSection extends StatelessWidget {
     );
   }
 
-  // Widget pour l'affichage "Hero" des 3 premiers
   Widget _buildTopThreeHero(List<Candidat> topThree) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceAround,
       children: [
-        // 2e Place
         if (topThree.length > 1) _buildHeroCandidat(topThree[1], isChampion: false),
-        // 1ère Place (Champion)
         if (topThree.isNotEmpty) _buildHeroCandidat(topThree[0], isChampion: true),
-        // 3e Place
         if (topThree.length > 2) _buildHeroCandidat(topThree[2], isChampion: false),
       ],
     );
   }
 
-  // Widget pour un candidat individuel dans la vue "Hero"
   Widget _buildHeroCandidat(Candidat candidat, {required bool isChampion}) {
+    // Utilise le service pour charger l'image via le réseau
+    final imageWidget = candidat.photo != null && candidat.photo!.isNotEmpty
+        ? Image.network(
+              '${ApiService.baseUrl}/${candidat.photo}', // ⚠️ Adaptez l'URL si nécessaire
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) => Center(child: Text(candidat.firstname.substring(0, 1), style: const TextStyle(fontSize: 24))),
+            )
+        : Center(child: Text(candidat.firstname.substring(0, 1), style: const TextStyle(fontSize: 24))); // Placeholder
+
     return Column(
       children: [
         Stack(
@@ -431,11 +518,9 @@ class _RankingSection extends StatelessWidget {
                   color: isChampion ? const Color(0xFFFDD835) : Colors.transparent,
                   width: 3,
                 ),
-                color: Colors.grey[300], // Placeholder
+                color: Colors.grey[300],
               ),
-              child: ClipOval(
-                child: Center(child: Text(candidat.firstname.substring(0, 1), style: TextStyle(fontSize: 24))), // Placeholder
-              ),
+              child: ClipOval(child: imageWidget),
             ),
             if (isChampion)
               const Positioned(
@@ -447,7 +532,7 @@ class _RankingSection extends StatelessWidget {
         ),
         const SizedBox(height: 8),
         Text(
-          '${candidat.firstname} ${candidat.nom}',
+          candidat.firstname, // Affichage du prénom uniquement pour la vue Hero
           style: TextStyle(
             fontWeight: FontWeight.bold,
             fontSize: isChampion ? 14 : 12,
@@ -475,10 +560,18 @@ class _RankingSection extends StatelessWidget {
     );
   }
 
-  // Widget pour un élément de la liste détaillée de classement
   Widget _buildRankingItem(Candidat candidat, int rank, int totalVotes) {
     final double percentage = totalVotes > 0 ? (candidat.votes / totalVotes) : 0.0;
     
+    // Utilise le service pour charger l'image via le réseau
+    final imageWidget = candidat.photo != null && candidat.photo!.isNotEmpty
+        ? Image.network(
+              '${ApiService.baseUrl}/${candidat.photo}', // ⚠️ Adaptez l'URL si nécessaire
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) => Center(child: Text(candidat.firstname.substring(0, 1))),
+            )
+        : Center(child: Text(candidat.firstname.substring(0, 1))); // Placeholder
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: Row(
@@ -507,9 +600,7 @@ class _RankingSection extends StatelessWidget {
               shape: BoxShape.circle,
               color: Colors.grey[200], // Placeholder
             ),
-            child: ClipOval(
-                child: Center(child: Text(candidat.firstname.substring(0, 1))),
-            ),
+            child: ClipOval(child: imageWidget),
           ),
           const SizedBox(width: 12),
 
@@ -519,7 +610,7 @@ class _RankingSection extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  '${candidat.firstname} ${candidat.nom}',
+                  '${candidat.firstname} ${candidat.lastname ?? ''}',
                   style: const TextStyle(fontWeight: FontWeight.bold),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -566,6 +657,33 @@ class CandidatCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Utilise le service pour charger l'image via le réseau
+    final imageWidget = candidat.photo != null && candidat.photo!.isNotEmpty
+        ? Image.network(
+              '${ApiService.baseUrl}/${candidat.photo}', // ⚠️ Adaptez l'URL si nécessaire
+              fit: BoxFit.cover,
+              loadingBuilder: (context, child, loadingProgress) {
+                if (loadingProgress == null) return child;
+                return Center(child: CircularProgressIndicator(
+                  value: loadingProgress.expectedTotalBytes != null
+                      ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
+                      : null,
+                ));
+              },
+              errorBuilder: (context, error, stackTrace) => const Center(
+                child: Text(
+                  'Image manquante',
+                  style: TextStyle(color: Colors.grey),
+                ),
+              ),
+            )
+        : const Center(
+            child: Text(
+              'Image manquante',
+              style: TextStyle(color: Colors.grey),
+            ),
+          );
+
     return SizedBox(
       height: 400, // Hauteur fixe pour alignement dans la grille
       child: Card(
@@ -584,12 +702,7 @@ class CandidatCard extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: Colors.grey[200], // Placeholder pour image
                   ),
-                  child: Center(
-                    child: Text(
-                      'Image ${candidat.firstname}',
-                      style: TextStyle(color: Colors.grey),
-                    ),
-                  ),
+                  child: imageWidget,
                 ),
                 // Bulle des votes
                 Positioned(
@@ -622,7 +735,7 @@ class CandidatCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      '${candidat.firstname} ${candidat.nom}',
+                      '${candidat.firstname} ${candidat.lastname ?? ''}',
                       style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
@@ -639,7 +752,7 @@ class CandidatCard extends StatelessWidget {
                         const Icon(Icons.location_on, size: 14, color: Colors.grey),
                         const SizedBox(width: 4),
                         Text(
-                          '${candidat.categorie} • ${candidat.age} ans',
+                          '${candidat.categorie} • ${candidat.age} ans', 
                           style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                         ),
                       ],
@@ -648,7 +761,7 @@ class CandidatCard extends StatelessWidget {
 
                     // Courte description
                     Text(
-                      candidat.descriptionShort,
+                      candidat.description ?? 'Pas de description.',
                       style: const TextStyle(fontSize: 12, color: Colors.grey),
                       maxLines: 3,
                       overflow: TextOverflow.ellipsis,
@@ -656,7 +769,7 @@ class CandidatCard extends StatelessWidget {
 
                     const Spacer(),
 
-                    // --- Bouton de vote avec nouvelle signature ---
+                    // --- Bouton de vote ---
                     Container(
                       width: double.infinity,
                       decoration: BoxDecoration(
@@ -675,7 +788,7 @@ class CandidatCard extends StatelessWidget {
                         ],
                       ),
                       child: TextButton(
-                        onPressed: () => onVote(candidat.id), // Nouvelle signature : envoie l'ID
+                        onPressed: () => onVote(candidat.id), 
                         style: TextButton.styleFrom(
                           padding: const EdgeInsets.symmetric(vertical: 10),
                           backgroundColor: Colors.transparent,
@@ -701,7 +814,6 @@ class CandidatCard extends StatelessWidget {
     );
   }
 }
-
 
 // --- 4. PIED DE PAGE (P4.png) ---
 class _FooterSection extends StatelessWidget {
