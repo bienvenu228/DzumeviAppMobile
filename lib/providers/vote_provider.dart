@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
 import '../models/vote.dart';
-import '../services/vote_service.dart';
+import '../services/vote_service.dart' hide Vote;
 
 class VoteProvider with ChangeNotifier {
   final VoteService _service = VoteService();
