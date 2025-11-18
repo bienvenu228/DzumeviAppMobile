@@ -1,47 +1,60 @@
 import 'dart:convert';
-import 'api_service.dart';
+import 'package:http/http.dart' as http;
 
+// --- Classe de service pour gérer vote et paiement ---
 class PaymentService {
-  /// Récupère les transactions.
-  /// Si la route n'existe pas ou renvoie une erreur, retourne simplement une liste vide.
-  Future<List<Map<String, dynamic>>> getTransactions() async {
-    try {
-      final res = await ApiService.get('paiements');
+  // URL de base de l'API (à modifier selon ton backend)
+  static const String baseUrl = "https://127.0.0.1:8000/api";
 
-      if (res.statusCode == 200) {
-        final data = jsonDecode(res.body);
-        final list = data is Map && data['data'] != null ? data['data'] : data;
-        return List<Map<String, dynamic>>.from(list as List);
-      }
-
-      print("⚠️ Avertissement: /paiements a renvoyé un status ${res.statusCode}");
-      return [];
-    } catch (e) {
-      print("⚠️ Impossible de récupérer les transactions: $e");
-      return []; // Fallback pour éviter tout crash
+  // --- Récupérer tous les candidats ---
+  static Future<List<dynamic>> _fetchRawCandidats() async {
+    final response = await http.get(Uri.parse('$baseUrl/candidats'));
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    } else {
+      throw Exception('Erreur API : ${response.statusCode}');
     }
   }
 
-  /// Calcule les totaux et statistiques.
-  Map<String, dynamic> computeAggregates(List<Map<String, dynamic>> txs) {
-    double total = 0.0;
-    final byMethod = <String, double>{};
+  // Transforme les données JSON en objets Candidat
+  static Future<List<dynamic>> getCandidats() async {
+    final raw = await _fetchRawCandidats();
+    return raw.map((json) => json).toList(); // Remplacer par ton modèle si nécessaire
+  }
 
-    for (final t in txs) {
-      final amount = double.tryParse(t['montant']?.toString() ?? '0') ?? 0.0;
-      total += amount;
-
-      final method = (t['moyen'] ?? t['method'] ?? 'unknown').toString();
-      byMethod[method] = (byMethod[method] ?? 0) + amount;
+  // --- Voter pour un candidat (après paiement réussi) ---
+  static Future<bool> voteCandidat(int candidatId) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/vote'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'candidat_id': candidatId}),
+      );
+      return response.statusCode == 200;
+    } catch (e) {
+      print("Erreur vote API : $e");
+      return false;
     }
+  }
 
-    final avg = txs.isNotEmpty ? total / txs.length : 0.0;
-
-    return {
-      'total': total,
-      'average': avg,
-      'byMethod': byMethod,
-      'count': txs.length,
-    };
+  // --- Effectuer un paiement avant vote ---
+  // type: "TMoney" ou "Flooz"
+  static Future<bool> makePayment({required String phoneNumber, required int amount, required String type}) async {
+    try {
+      // Simulateur : envoyer vers l'API paiement
+      final response = await http.post(
+        Uri.parse('$baseUrl/payment'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'phone': phoneNumber,
+          'amount': amount,
+          'type': type,
+        }),
+      );
+      return response.statusCode == 200;
+    } catch (e) {
+      print("Erreur paiement : $e");
+      return false;
+    }
   }
 }

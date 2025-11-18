@@ -1,42 +1,32 @@
 import 'dart:convert';
-import 'package:http/http.dart' as http;
 import '../models/vote.dart';
+import 'api_service.dart';
 
 class VoteService {
-  final String baseUrl = "http://127.0.0.1:8000/api";
-
   Future<List<Vote>> getVotes() async {
-    final res = await http.get(Uri.parse('$baseUrl/votes'));
+    final res = await ApiService.get('votes');
 
     if (res.statusCode == 200) {
-      final data = jsonDecode(res.body) as List;
-      return data.map((e) => Vote.fromJson(e)).toList();
-    } else {
-      throw Exception('Erreur lors du chargement des votes');
+      final list = jsonDecode(res.body) as List;
+      return list.map((e) => Vote.fromJson(e)).toList();
     }
+
+    throw Exception("Erreur lors du chargement des votes");
   }
 
   Future<void> createVote(Map<String, dynamic> body) async {
-    final res = await http.post(
-      Uri.parse('$baseUrl/votes'),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode(body),
-    );
+    final res = await ApiService.post('votes', body, withAuth: true);
 
     if (res.statusCode != 201) {
-      throw Exception('Erreur lors de la création du vote');
+      throw Exception("Erreur de création du vote");
     }
   }
 
   Future<void> updateVote(int voteId, Map<String, dynamic> body) async {
-    final res = await http.put(
-      Uri.parse('$baseUrl/votes/$voteId'),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode(body),
-    );
+    final res = await ApiService.put('votes/$voteId', body, withAuth: true);
 
     if (res.statusCode != 200) {
-      throw Exception('Erreur lors de la mise à jour du vote');
+      throw Exception("Erreur de mise à jour du vote");
     }
   }
 }

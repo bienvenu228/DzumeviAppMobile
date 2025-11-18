@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../services/payment_service.dart';
 
 // --- Modèle Candidat pour l'exemple (à supprimer si vous l'avez déjà dans candidat.dart) ---
 class Candidat {
@@ -7,7 +8,7 @@ class Candidat {
   final String categorie; // Utilisé pour la ville/l'origine sur la capture
   final String descriptionShort;
   final String photo;
-  final int votes; // Rendu non nullable car essentiel au classement
+  int votes; // Rendu non nullable car essentiel au classement
   final String firstname;
   final int age; // Ajouté pour l'âge
   
@@ -53,11 +54,82 @@ class _CandidatListPageState extends State<CandidatListPage> {
     ]..sort((a, b) => b.votes.compareTo(a.votes)); // Tri décroissant pour le classement
   }
 
-  void _handleVote(int id) {
-    // Fonctionnalité de vote à implémenter (Appel API, rafraîchissement de l'état, etc.)
-    print('Vote pour Candidat ID: $id');
-    // Mettez à jour les votes et triez la liste si l'API est appelée ici
+  // --- Gestion du vote avec paiement ---
+Future<void> _handleVote(int candidatId) async {
+  final candidat = candidats.firstWhere((c) => c.id == candidatId);
+
+  // 1️⃣ Choix du type de paiement
+  String? paymentType = await showDialog<String>(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: const Text("Choisir le moyen de paiement"),
+      content: const Text("1 vote = 100 FCFA"),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context, "TMoney"),
+          child: const Text("TMoney"),
+        ),
+        TextButton(
+          onPressed: () => Navigator.pop(context, "Flooz"),
+          child: const Text("Flooz"),
+        ),
+      ],
+    ),
+  );
+
+  if (paymentType == null) return; // Annulé
+
+  // 2️⃣ Demande du numéro de téléphone
+  final phoneController = TextEditingController();
+  bool? confirmed = await showDialog<bool>(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: const Text("Numéro de téléphone"),
+      content: TextField(
+        controller: phoneController,
+        keyboardType: TextInputType.phone,
+        decoration: const InputDecoration(hintText: "Ex: 90XXXXXXXX"),
+      ),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(context, false), child: const Text("Annuler")),
+        TextButton(onPressed: () => Navigator.pop(context, true), child: const Text("Payer")),
+      ],
+    ),
+  );
+
+  if (confirmed != true || phoneController.text.isEmpty) return;
+
+  // 3️⃣ Paiement via PaymentService
+  final successPayment = await PaymentService.makePayment(
+    phoneNumber: phoneController.text,
+    amount: 100,
+    type: paymentType,
+  );
+
+  if (!successPayment) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("Paiement échoué, réessayez.")),
+    );
+    return;
   }
+
+  // 4️⃣ Vote après paiement réussi
+  final successVote = await PaymentService.voteCandidat(candidat.id);
+  if (successVote) {
+    setState(() {
+      candidat.votes += 1;
+      candidats.sort((a, b) => b.votes.compareTo(a.votes));
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text("Vote pour ${candidat.firstname} enregistré !")),
+    );
+  } else {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("Vote échoué après paiement.")),
+    );
+  }
+}
+
 
   // Couleurs personnalisées pour le dégradé de l'en-tête
   final List<Color> _headerGradient = const [
@@ -494,10 +566,8 @@ class CandidatCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Hauteur totale fixe pour s'assurer que toutes les cartes s'alignent, 
-    // en utilisant FractionallySizedBox ou SizedBox dans une grille maxExtent
     return SizedBox(
-      height: 400, 
+      height: 400, // Hauteur fixe pour alignement dans la grille
       child: Card(
         elevation: 4,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -508,15 +578,17 @@ class CandidatCard extends StatelessWidget {
             // Zone de l'image
             Stack(
               children: [
-                // Image du candidat (Placeholder)
                 Container(
-                  height: 180, 
+                  height: 180,
                   width: double.infinity,
                   decoration: BoxDecoration(
-                    color: Colors.grey[200], 
+                    color: Colors.grey[200], // Placeholder pour image
                   ),
                   child: Center(
-                    child: Text('Image ${candidat.firstname}', style: TextStyle(color: Colors.grey)),
+                    child: Text(
+                      'Image ${candidat.firstname}',
+                      style: TextStyle(color: Colors.grey),
+                    ),
                   ),
                 ),
                 // Bulle des votes
@@ -541,7 +613,7 @@ class CandidatCard extends StatelessWidget {
                 ),
               ],
             ),
-            
+
             // Détails du candidat
             Expanded(
               child: Padding(
@@ -560,8 +632,8 @@ class CandidatCard extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 4),
-                    
-                    // Ville et Âge
+
+                    // Ville et âge
                     Row(
                       children: [
                         const Icon(Icons.location_on, size: 14, color: Colors.grey),
@@ -581,11 +653,44 @@ class CandidatCard extends StatelessWidget {
                       maxLines: 3,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    
-                    const Spacer(), 
 
-                    // Bouton de vote (Dégradé)
-                    _buildVoteButton(context, candidat),
+                    const Spacer(),
+
+                    // --- Bouton de vote avec nouvelle signature ---
+                    Container(
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(25),
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFFE91E63), Color(0xFF9C27B0)], // Rose à Violet
+                          begin: Alignment.centerLeft,
+                          end: Alignment.centerRight,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.1),
+                            blurRadius: 5,
+                            offset: const Offset(0, 3),
+                          ),
+                        ],
+                      ),
+                      child: TextButton(
+                        onPressed: () => onVote(candidat.id), // Nouvelle signature : envoie l'ID
+                        style: TextButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 10),
+                          backgroundColor: Colors.transparent,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
+                        ),
+                        child: Text(
+                          'Voter pour ${candidat.firstname}',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                          ),
+                        ),
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -595,46 +700,8 @@ class CandidatCard extends StatelessWidget {
       ),
     );
   }
-  
-  // Widget pour le bouton de vote en dégradé
-  Widget _buildVoteButton(BuildContext context, Candidat candidat) {
-    return Container(
-      width: double.infinity,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(25),
-        gradient: const LinearGradient(
-          colors: [Color(0xFFE91E63), Color(0xFF9C27B0)], // Rose à Violet
-          begin: Alignment.centerLeft,
-          end: Alignment.centerRight,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 5,
-            offset: const Offset(0, 3),
-          ),
-        ],
-      ),
-      child: TextButton(
-        onPressed: () => onVote(candidat.id),
-        style: TextButton.styleFrom(
-          padding: const EdgeInsets.symmetric(vertical: 10),
-          backgroundColor: Colors.transparent,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
-          // overlayColor: WidgetStateProperty.all(Colors.white.withOpacity(0.1)),
-        ),
-        child: Text(
-          'Voter pour ${candidat.firstname}',
-          style: const TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-            fontSize: 14,
-          ),
-        ),
-      ),
-    );
-  }
 }
+
 
 // --- 4. PIED DE PAGE (P4.png) ---
 class _FooterSection extends StatelessWidget {
