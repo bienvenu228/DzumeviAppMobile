@@ -1,9 +1,12 @@
 // services/api_service.dart
 
 class ApiService {
-  // ⚠️ Remplacez cette URL par l'adresse IP de votre machine (pour un téléphone physique) 
-  // ou '10.0.2.2' (pour un émulateur Android) ou 'localhost' (pour iOS Simulator).
-  static const String baseUrl = "http://192.168.0.212/Dzumevi_APi/public/api"; 
+  // static const String baseUrl = 'http://127.0.0.1:8000/api';
+  static const String baseUrl = 'http://192.168.0.30/Dzumevi_APi/public/api';
+  
+  // NOTE: Dans un vrai projet, vous devriez avoir un service pour stocker/récupérer le token.
+  // Ce token doit être récupéré et stocké après la connexion de l'utilisateur.
+  static String? _authToken; 
 
   // Méthode utilitaire pour construire les en-têtes JSON
   static Map<String, String> getHeaders() {
