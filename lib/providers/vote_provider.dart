@@ -11,7 +11,7 @@ class VoteProvider with ChangeNotifier {
     isLoading = true;
     notifyListeners();
 
-    votes = await _service.getVotes();
+    // votes = await _service.getVotes();
 
     isLoading = false;
     notifyListeners();
