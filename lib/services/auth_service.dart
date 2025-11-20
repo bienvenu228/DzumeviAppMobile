@@ -6,7 +6,7 @@ import '../models/votant.dart';
 import 'api_service.dart';
 
 class AuthService {
-  final String baseUrl = "http://192.168.0.212/Dzumevi_APi/public/api";
+  final String baseUrl = "http://127.0.0.1:8000/api";
   final storage = const FlutterSecureStorage();
 
   Future<Admin> loginAdmin(String email, String password) async {

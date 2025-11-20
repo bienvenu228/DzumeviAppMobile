@@ -8,9 +8,17 @@ class CandidatService {
 
   Future<List<Candidat>> fetchCandidats() async {
     final response = await http.get(Uri.parse('$_baseUrl/candidats'));
+String cleanBody = response.body
+    .replaceAll("<!--", "")
+    .replaceAll("-->", "")
+    .trim();
 
+// On parse le JSON propre
+final data = jsonDecode(cleanBody);
+
+    print('Response body: ${data}'); // Pour le débogage
     if (response.statusCode == 200) {
-      final Map<String, dynamic> data = json.decode(response.body);
+      final Map<String, dynamic> data = jsonDecode(cleanBody);
 
       if (data['status'] == 'success' && data.containsKey('data')) {
         final List<dynamic> candidatsJson = data['data'];
