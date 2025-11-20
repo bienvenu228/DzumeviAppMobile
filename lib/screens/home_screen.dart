@@ -1,4 +1,5 @@
 import 'package:dzumevimobile/screens/voteListPage.dart';
+import 'package:dzumevimobile/screens/vote_overview_page.dart';
 import 'package:flutter/material.dart';
 
 class HomeScreen extends StatelessWidget {
@@ -11,7 +12,7 @@ class HomeScreen extends StatelessWidget {
       body: Center(
         child: ElevatedButton(
           child: const Text('Voir les votes'),
-          onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const VoteScreen())),
+          onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const VoteOverviewPage())),
         ),
       ),
     );

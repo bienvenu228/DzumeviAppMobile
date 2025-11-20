@@ -1,43 +1,37 @@
-// --- MODÈLE CANDIDAT (Adapté à la réponse JSON de CandidatsController) ---
 class Candidat {
-  final int id;
-  final String? lastname; 
+  final String id;
   final String firstname;
-  final String maticule;
+  final String lastname;
+  final String matricule;
+  final String description;
   final String categorie;
-  final String? description;
-  final String? photo;
-  // ⭐️ CORRECTION : RETIRER FINAL ICI ⭐️
-  int votes; // Rendre non-final pour pouvoir l'incrémenter via setState
-  final int age; 
-  final int voteId;
+  final String photoUrl;
+  final String voteId;
+  final int votes; // ajout du nombre de votes
 
   Candidat({
     required this.id,
-    this.lastname,
     required this.firstname,
-    required this.maticule,
+    required this.lastname,
+    required this.matricule,
+    required this.description,
     required this.categorie,
-    this.description,
-    this.photo,
-    required this.votes, // Laisser requis dans le constructeur
-    required this.age,
+    required this.photoUrl,
     required this.voteId,
+    required this.votes,
   });
 
   factory Candidat.fromJson(Map<String, dynamic> json) {
     return Candidat(
-      id: (json['id'] as num).toInt(),
-      lastname: json['lastname'] as String?,
-      firstname: json['firstname'] as String,
-      maticule: json['maticule'] as String,
-      categorie: json['categorie'] as String,
-      description: json['description'] as String?,
-      photo: json['photo'] as String?,
-      votes: (json['votes'] as num? ?? 0).toInt(), 
-      age: (json['age'] as num? ?? 20).toInt(),
-      voteId: (json['vote_id'] as num).toInt(),
+      id: json['id'].toString(),
+      firstname: json['firstname'] ?? '',
+      lastname: json['lastname'] ?? '',
+      matricule: json['matricule'] ?? '',
+      description: json['description'] ?? '',
+      categorie: json['categorie'] ?? '',
+      photoUrl: json['photo_url'] ?? '',
+      voteId: json['vote_id'].toString(),
+      votes: json['votes'] ?? 0, // par défaut 0
     );
   }
 }
-// -----------------------------------------------------------------------------------

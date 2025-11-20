@@ -1,25 +1,25 @@
 class Vote {
-  final int id;
-  final String nom;
+  final String id;
+  final String name;
   final String date;
   final String echeance;
-  final String statut;
+  final String statuts;
 
   Vote({
     required this.id,
-    required this.nom,
+    required this.name,
     required this.date,
     required this.echeance,
-    required this.statut,
+    required this.statuts,
   });
 
   factory Vote.fromJson(Map<String, dynamic> json) {
     return Vote(
-      id: json['id'],
-      nom: json['nom'],
-      date: json['date'],
-      echeance: json['echeance'],
-      statut: json['statuts'],
+      id: json['id'].toString(),
+      name: json['name'] ?? '',
+      date: json['date'] ?? '',
+      echeance: json['echeance'] ?? '',
+      statuts: json['statuts'] ?? '',
     );
   }
 }
