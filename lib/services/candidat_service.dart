@@ -1,52 +1,60 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import '../models/candidat.dart';
+import '../models/candidat.dart'; 
 
 class CandidatService {
-  final String baseUrl = "https://mon-api.com/api";
+  // 🚨 IMPORTANT : Vérifiez et ajustez cette URL si nécessaire.
+  final String _baseUrl = 'http://127.0.0.1:8000/api';
 
-  Future<List<Candidat>> getCandidatsByVote(int voteId) async {
-    final res = await http.get(Uri.parse('$baseUrl/votes/$voteId/candidats'));
+  Future<List<Candidat>> fetchCandidats() async {
+    final response = await http.get(Uri.parse('$_baseUrl/candidats'));
 
-    if (res.statusCode == 200) {
-      final data = jsonDecode(res.body) as List;
-      return data.map((e) => Candidat.fromJson(e)).toList();
+    if (response.statusCode == 200) {
+      final Map<String, dynamic> data = json.decode(response.body);
+
+      if (data['status'] == 'success' && data.containsKey('data')) {
+        final List<dynamic> candidatsJson = data['data'];
+
+        return candidatsJson
+            .map((jsonItem) => Candidat.fromJson(jsonItem))
+            .toList();
+      } else {
+        throw Exception(
+            'Réponse de l\'API inattendue : ${data['message'] ?? 'Format incorrect'}');
+      }
     } else {
-      throw Exception('Erreur lors du chargement des candidats');
+      throw Exception(
+          'Échec de la requête API. Statut: ${response.statusCode}');
     }
   }
 
-  Future<void> createCandidat(Map<String, dynamic> body) async {
-    final res = await http.post(
-      Uri.parse('$baseUrl/candidats'),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode(body),
+  // NOUVELLE MÉTHODE : Envoie le vote au backend
+  Future<Map<String, dynamic>> voteForCandidat(int candidatId, int voteId) async {
+    final url = Uri.parse('$_baseUrl/paiement'); // La route que vous avez définie
+
+    final response = await http.post(
+      url,
+      headers: <String, String>{
+        'Content-Type': 'application/json; charset=UTF-8',
+      },
+      // Le corps de la requête doit inclure les données attendues par votre PaiementsController@doVote
+      body: jsonEncode(<String, dynamic>{
+        // Assurez-vous que ces clés correspondent à ce qu'attend votre contrôleur Laravel
+        'candidat_id': candidatId,
+        'vote_id': voteId, 
+        // Ajoutez ici d'autres champs nécessaires si votre PaiementsController le requiert (ex: user_id)
+      }),
     );
 
-    if (res.statusCode != 201) {
-      throw Exception('Erreur lors de la création du candidat');
-    }
-  }
+    final Map<String, dynamic> responseData = json.decode(response.body);
 
-  Future<void> updateCandidat(int candidatId, Map<String, dynamic> body) async {
-    final res = await http.put(
-      Uri.parse('$baseUrl/candidats/$candidatId'),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode(body),
-    );
-
-    if (res.statusCode != 200) {
-      throw Exception('Erreur lors de la mise à jour du candidat');
-    }
-  }
-
-  Future<void> deleteCandidat(int candidatId) async {
-    final res = await http.delete(
-      Uri.parse('$baseUrl/candidats/$candidatId'),
-    );
-
-    if (res.statusCode != 200) {
-      throw Exception('Erreur lors de la suppression du candidat');
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      // Succès (status 200 ou 201 si le paiement a créé une ressource)
+      return responseData; 
+    } else {
+      // Échec de la requête ou validation ratée
+      throw Exception(
+          'Erreur lors du vote: ${responseData['message'] ?? 'Erreur inconnue'}');
     }
   }
 }

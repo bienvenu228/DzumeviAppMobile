@@ -1,46 +1,43 @@
+// --- MODÈLE CANDIDAT (Adapté à la réponse JSON de CandidatsController) ---
 class Candidat {
   final int id;
-  final String nom;
+  final String? lastname; 
+  final String firstname;
+  final String maticule;
   final String categorie;
-  final String descriptionShort;
-  final String photo;
-  
-  // NOUVEAUX CHAMPS AJOUTÉS ET TYPÉS CORRECTEMENT
-  final int? votes; // Essentiel pour le DashboardService
-  final String? matricule; 
-  final String? firstname;
   final String? description;
+  final String? photo;
+  // ⭐️ CORRECTION : RETIRER FINAL ICI ⭐️
+  int votes; // Rendre non-final pour pouvoir l'incrémenter via setState
+  final int age; 
+  final int voteId;
 
   Candidat({
     required this.id,
-    required this.nom,
+    this.lastname,
+    required this.firstname,
+    required this.maticule,
     required this.categorie,
-    required this.descriptionShort,
-    required this.photo,
-    // Ces champs peuvent être nullables s'ils ne sont pas toujours présents
-    this.votes, 
-    this.matricule,
-    this.firstname,
     this.description,
+    this.photo,
+    required this.votes, // Laisser requis dans le constructeur
+    required this.age,
+    required this.voteId,
   });
 
   factory Candidat.fromJson(Map<String, dynamic> json) {
     return Candidat(
-      id: json['id'] as int,
-      nom: json['nom'] as String,
+      id: (json['id'] as num).toInt(),
+      lastname: json['lastname'] as String?,
+      firstname: json['firstname'] as String,
+      maticule: json['maticule'] as String,
       categorie: json['categorie'] as String,
-      descriptionShort: json['description_short'] as String,
-      photo: json['photo'] as String,
-      
-      // Initialisation des nouveaux champs:
-      // Nous utilisons le safe-cast 'as int?' ou 'as String?' pour gérer la nullité.
-      votes: json['votes'] is num ? json['votes']?.toInt() : null,
-      matricule: json['matricule'] as String?,
-      firstname: json['firstname'] as String?,
       description: json['description'] as String?,
+      photo: json['photo'] as String?,
+      votes: (json['votes'] as num? ?? 0).toInt(), 
+      age: (json['age'] as num? ?? 20).toInt(),
+      voteId: (json['vote_id'] as num).toInt(),
     );
   }
-
-  // Suppression des 'get' qui retournaient null et faisaient doublon avec les champs finaux
-  // (La déclaration 'final int? votes;' gère maintenant l'accès aux votes.)
 }
+// -----------------------------------------------------------------------------------

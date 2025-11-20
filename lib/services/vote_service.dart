@@ -1,42 +1,33 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import '../models/vote.dart';
+import '../models/vote.dart'; // Importez le nouveau modèle
 
 class VoteService {
-  final String baseUrl = "http://127.0.0.1:8000/api";
+  // 🚨 IMPORTANT : Vérifiez et ajustez cette URL si nécessaire.
+  // 10.0.2.2 est pour l'émulateur Android, utilisez votre IP locale pour un appareil physique.
+  final String _baseUrl = 'http://127.0.0.1:8000/api';
 
-  Future<List<Vote>> getVotes() async {
-    final res = await http.get(Uri.parse('$baseUrl/votes'));
+  Future<List<Vote>> fetchVotes() async {
+    final response = await http.get(Uri.parse('$_baseUrl/votes'));
 
-    if (res.statusCode == 200) {
-      final data = jsonDecode(res.body) as List;
-      return data.map((e) => Vote.fromJson(e)).toList();
+    if (response.statusCode == 200) {
+      final Map<String, dynamic> data = json.decode(response.body);
+
+      // Vérifiez le 'status' et la structure de la réponse Laravel
+      if (data['status'] == 'success' && data.containsKey('data')) {
+        final List<dynamic> votesJson = data['data'];
+
+        // Mappage de la liste JSON en objets Vote
+        return votesJson
+            .map((jsonItem) => Vote.fromJson(jsonItem))
+            .toList();
+      } else {
+        throw Exception(
+            'Réponse de l\'API inattendue : ${data['message'] ?? 'Format incorrect'}');
+      }
     } else {
-      throw Exception('Erreur lors du chargement des votes');
-    }
-  }
-
-  Future<void> createVote(Map<String, dynamic> body) async {
-    final res = await http.post(
-      Uri.parse('$baseUrl/votes'),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode(body),
-    );
-
-    if (res.statusCode != 201) {
-      throw Exception('Erreur lors de la création du vote');
-    }
-  }
-
-  Future<void> updateVote(int voteId, Map<String, dynamic> body) async {
-    final res = await http.put(
-      Uri.parse('$baseUrl/votes/$voteId'),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode(body),
-    );
-
-    if (res.statusCode != 200) {
-      throw Exception('Erreur lors de la mise à jour du vote');
+      throw Exception(
+          'Échec de la requête API. Statut: ${response.statusCode}');
     }
   }
 }
