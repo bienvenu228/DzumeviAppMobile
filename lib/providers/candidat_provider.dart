@@ -11,7 +11,7 @@ class CandidatProvider with ChangeNotifier {
     isLoading = true;
     notifyListeners();
 
-    candidats = await _service.getCandidatsByVote(voteId);
+    // candidats = await _service.getCandidatsByVote(voteId);
 
     isLoading = false;
     notifyListeners();
