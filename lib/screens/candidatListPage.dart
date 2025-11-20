@@ -1,31 +1,7 @@
 import 'package:flutter/material.dart';
 // Assurez-vous que les chemins d'importation sont corrects pour votre projet
-import '../models/candidat.dart'; 
 import '../services/candidat_service.dart';
-
-// --- Modèle Candidat pour l'exemple (à supprimer si vous l'avez déjà dans candidat.dart) ---
-class Candidat {
-  final int id;
-  final String nom;
-  final String categorie; // Utilisé pour la ville/l'origine sur la capture
-  final String descriptionShort;
-  final String photo;
-  final int votes; // Rendu non nullable car essentiel au classement
-  final String firstname;
-  final int age; // Ajouté pour l'âge
-  
-  Candidat({
-    required this.id,
-    required this.nom,
-    required this.categorie,
-    required this.descriptionShort,
-    required this.photo,
-    required this.votes, 
-    required this.firstname,
-    required this.age,
-  });
-}
-
+import '../models/candidat.dart';
 
 
 // --- WIDGET PRINCIPAL : CANDIDAT LIST PAGE ---
