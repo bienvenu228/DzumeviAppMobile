@@ -1,37 +1,40 @@
 class Candidat {
-  final String id;
+  int id;
+  final String? lastname;
   final String firstname;
-  final String lastname;
   final String matricule;
-  final String description;
   final String categorie;
-  final String photoUrl;
-  final String voteId;
-  final int votes; // ajout du nombre de votes
+  final String? description;
+  final String? photo;
+  int votes; // non-final pour pouvoir l’incrémenter
+  final int age;
+  final int voteId;
 
   Candidat({
     required this.id,
+    this.lastname,
     required this.firstname,
-    required this.lastname,
     required this.matricule,
-    required this.description,
     required this.categorie,
-    required this.photoUrl,
-    required this.voteId,
+    this.description,
+    this.photo,
     required this.votes,
+    required this.age,
+    required this.voteId,
   });
 
   factory Candidat.fromJson(Map<String, dynamic> json) {
     return Candidat(
-      id: json['id'].toString(),
-      firstname: json['firstname'] ?? '',
-      lastname: json['lastname'] ?? '',
-      matricule: json['matricule'] ?? '',
-      description: json['description'] ?? '',
-      categorie: json['categorie'] ?? '',
-      photoUrl: json['photo_url'] ?? '',
-      voteId: json['vote_id'].toString(),
-      votes: json['votes'] ?? 0, // par défaut 0
+      id: (json['id'] as num).toInt(),
+      lastname: json['lastname'] as String?,
+      firstname: json['firstname'] as String,
+      matricule: json['matricule'] as String,
+      categorie: json['categorie'] as String,
+      description: json['description'] as String?,
+      photo: json['photo'] as String?,
+      votes: (json['votes'] as num? ?? 0).toInt(),
+      age: (json['age'] as num? ?? 20).toInt(),
+      voteId: (json['vote_id'] as num).toInt(),
     );
   }
 }

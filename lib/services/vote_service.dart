@@ -1,71 +1,33 @@
-// services/vote_service.dart
-
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'api_service.dart';
-
-// Classe Vote minimale pour le mapping (À compléter si nécessaire)
-class Vote {
-  final int id;
-  final String name;
-  final String statuts;
-  
-  Vote({required this.id, required this.name, required this.statuts});
-
-  factory Vote.fromJson(Map<String, dynamic> json) {
-    return Vote(
-      id: json['id'] as int,
-      name: json['name'] as String,
-      statuts: json['statuts'] as String,
-    );
-  }
-}
+import '../models/vote.dart'; // Importez le nouveau modèle
 
 class VoteService {
-  
-  // Implémente VoteController@index
-  static Future<List<Vote>> fetchAllVotes() async {
-    final url = Uri.parse('${ApiService.baseUrl}/votes'); // Assurez-vous que la route est /api/votes
-    final response = await http.get(url, headers: ApiService.getHeaders());
+  // 🚨 IMPORTANT : Vérifiez et ajustez cette URL si nécessaire.
+  // 10.0.2.2 est pour l'émulateur Android, utilisez votre IP locale pour un appareil physique.
+  final String _baseUrl = 'http://192.168.0.212/Dzumevi_APi/public/api';
+
+  Future<List<Vote>> fetchVotes() async {
+    final response = await http.get(Uri.parse('$_baseUrl/votes'));
 
     if (response.statusCode == 200) {
-      final jsonResponse = json.decode(response.body);
-      
-      if (jsonResponse['status'] == 'success' && jsonResponse['data'] is List) {
-        final List<dynamic> data = jsonResponse['data'];
-        return data.map((json) => Vote.fromJson(json)).toList();
-      }
-      throw Exception(jsonResponse['message'] ?? 'Format de réponse des votes invalide.');
-    } else {
-      throw Exception('Échec de la récupération de la liste des votes. Statut: ${response.statusCode}');
-    }
-  }
+      final Map<String, dynamic> data = json.decode(response.body);
 
-  Future<dynamic> getVotes() async {
-    // ⚠️ Remplacez 'votes/summary' par votre endpoint API réel.
-    // Votre URL d'API devra être ajustée pour ne pas nécessiter d'ID
-    final url = Uri.parse('${ApiService.baseUrl}/votes/all_summary');
+      // Vérifiez le 'status' et la structure de la réponse Laravel
+      if (data['status'] == 'success' && data.containsKey('data')) {
+        final List<dynamic> votesJson = data['data'];
 
-    try {
-      final response = await http.get(url, headers: ApiService.getHeaders());
-
-      if (response.statusCode == 200) {
-        final jsonResponse = json.decode(response.body);
-        
-        // Assurez-vous que la réponse correspond au format attendu de votre API
-        if (jsonResponse['status'] == 'success') {
-          // Si cette méthode est utilisée pour obtenir des statistiques (nombre total de votes, etc.)
-          return jsonResponse['data']; // Retourne les données brutes pour traitement
-        }
-        throw Exception(jsonResponse['message'] ?? 'Format de réponse API invalide.');
+        // Mappage de la liste JSON en objets Vote
+        return votesJson
+            .map((jsonItem) => Vote.fromJson(jsonItem))
+            .toList();
       } else {
-        throw Exception('Échec du chargement des votes: Statut ${response.statusCode}');
+        throw Exception(
+            'Réponse de l\'API inattendue : ${data['message'] ?? 'Format incorrect'}');
       }
-    } catch (e) {
-      print('Erreur dans getVotes: $e');
-      rethrow;
+    } else {
+      throw Exception(
+          'Échec de la requête API. Statut: ${response.statusCode}');
     }
   }
-
-  // NOTE: Les méthodes store/show/update/destroy sont omises ici.
 }
