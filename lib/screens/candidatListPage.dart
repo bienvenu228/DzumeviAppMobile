@@ -167,9 +167,9 @@ class _CandidatCardState extends State<CandidatCard> {
   // NOUVELLE FONCTION : Affiche le formulaire dans une boîte de dialogue centrée
   void _showPaymentDialog(Candidat candidat) {
     // Les variables d'état du formulaire sont maintenant locales au dialogue
-    String name = 'John Doe';
-    String email = 'john.doe@example.com';
-    String phoneNumber = '+22997123456';
+    String name = 'Amiir OURO-AKPO';
+    String email = 'amiirkhazri@gmail.com';
+    String phoneNumber = '+22892646688';
     String mode = availablePaymentModes.first;
     bool isLoading = false; 
 
@@ -194,7 +194,7 @@ class _CandidatCardState extends State<CandidatCard> {
                   voteId: candidat.voteId, 
                   name: name,
                   email: email,
-                  phoneNumber: phoneNumber,
+                  phoneNumber: phoneNumber.replaceAll('', ''),
                   country: defaultCountry,
                   amount: defaultVoteAmount, 
                   currency: defaultCurrency,
@@ -205,7 +205,7 @@ class _CandidatCardState extends State<CandidatCard> {
                 final scaffoldMessenger = ScaffoldMessenger.of(context);
                 
                 try {
-                  final response = await widget.candidatService.voteForCandidat(paymentDetails, candidat.voteId);
+                  final response = await widget.candidatService.voteForCandidat(paymentDetails);
                   
                   // Ferme le dialogue
                   Navigator.of(context).pop(); 
@@ -220,6 +220,7 @@ class _CandidatCardState extends State<CandidatCard> {
                 } catch (e) {
                   // Ferme le dialogue
                   Navigator.of(context).pop(); 
+                  print(e);
 
                   scaffoldMessenger.showSnackBar(
                     SnackBar(
@@ -319,7 +320,7 @@ class _CandidatCardState extends State<CandidatCard> {
                             TextFormField(
                               initialValue: phoneNumber,
                               decoration: _inputDecoration.copyWith(
-                                labelText: 'Téléphone (+229...)',
+                                labelText: 'Téléphone (+228...)',
                                 prefixIcon: const Icon(Icons.phone, size: 16, color: Colors.grey),
                               ),
                               keyboardType: TextInputType.phone,
