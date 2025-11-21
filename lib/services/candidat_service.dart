@@ -19,6 +19,7 @@ class CandidatService {
     
     // On parse le JSON propre
     final data = jsonDecode(cleanBody);
+    print(data);
     
     if (response.statusCode == 200) {
       final List<dynamic> candidatsJson = data['data'];
@@ -34,9 +35,9 @@ class CandidatService {
 
   // MÉTHODE POUR INITIER LA TRANSACTION DE PAIEMENT/VOTE (mise à jour)
   // Elle prend un objet PaymentDetails qui contient TOUS les champs requis par votre contrôleur Laravel (name, email, amount, mode, etc.).
-  Future<Map<String, dynamic>> voteForCandidat(PaymentDetails details, int voteId) async {
-    // L'endpoint est maintenant 'dovote' pour correspondre à la fonction de votre contrôleur
-    final url = Uri.parse('$_baseUrl/dovote'); 
+  Future<Map<String, dynamic>> voteForCandidat(PaymentDetails details) async {
+    // L'endpoint est maintenant 'paiement' pour correspondre à la fonction de votre contrôleur
+    final url = Uri.parse('$_baseUrl/paiement'); 
     
     // Convertit l'objet PaymentDetails en Map JSON (Contient tous les champs FedaPay + candidat_id/vote_id)
     final body = details.toJson();
@@ -45,10 +46,12 @@ class CandidatService {
       final response = await http.post(
         url,
         headers: {'Content-Type': 'application/json'},
-        body: json.encode(body),
+        body: json.encode(body)
       );
 
-      final responseData = json.decode(response.body);
+      print(response);
+
+      final responseData = json.decode(response.body.replaceAll("<!--", "").replaceAll("-->", "").trim());
 
       // Succès: 201 Created pour une initiation de paiement réussie
       if (response.statusCode == 201 && responseData['success'] == true) {
@@ -67,6 +70,7 @@ class CandidatService {
       }
     } catch (e) {
       // Erreur de réseau, timeout, ou erreur de formatage JSON
+      print(e);
       throw Exception('Erreur de réseau ou de traitement: $e');
     }
   }
