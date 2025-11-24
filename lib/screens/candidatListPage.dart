@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 // Assurez-vous que les chemins d'importation sont corrects pour votre projet
-import '../models/candidat.dart'; 
 import '../services/candidat_service.dart';
 
 // --- Modèle Candidat pour l'exemple (à supprimer si vous l'avez déjà dans candidat.dart) ---
