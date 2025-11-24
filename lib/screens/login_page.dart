@@ -1,22 +1,25 @@
 import 'package:flutter/material.dart';
-import '../../services/auth_service.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../providers/auth_provider.dart';
 
-class LoginPage extends StatefulWidget {
+class LoginPage extends ConsumerStatefulWidget {
   const LoginPage({super.key});
 
   @override
-  State<LoginPage> createState() => _LoginPageState();
+  ConsumerState<LoginPage> createState() => _LoginPageState();
 }
 
-class _LoginPageState extends State<LoginPage> {
+class _LoginPageState extends ConsumerState<LoginPage> {
   final _nameController = TextEditingController();
   final _passwordController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
   bool _obscurePassword = true;
-  bool _isLoading = false;
-  String? _errorMessage;
 
-  final AuthService _authService = AuthService();
+  // Couleurs personnalisées
+  final Color _primaryColor = const Color(0xFF673AB7);
+  final Color _secondaryColor = const Color(0xFFE0E0F8);
+  final Color _textFieldFillColor = const Color(0xFFF2F3F8);
+  final Color _cardColor = Colors.white;
 
   @override
   void dispose() {
@@ -30,21 +33,13 @@ class _LoginPageState extends State<LoginPage> {
       return;
     }
 
-    setState(() {
-      _isLoading = true;
-      _errorMessage = null;
-    });
-
     try {
-      // Le résultat est un objet Admin (voir AuthService et Admin.dart)
-      final adminResult = await _authService.loginAdmin(
+      await ref.read(authNotifierProvider.notifier).loginAdmin(
         _nameController.text.trim(),
         _passwordController.text,
       );
 
       if (mounted) {
-        // Si la fonction loginAdmin s'exécute sans erreur, la connexion est réussie.
-
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Connexion réussie'),
@@ -53,38 +48,26 @@ class _LoginPageState extends State<LoginPage> {
           ),
         );
 
-        // Nouvelle logique (correcte) : Redirection vers la page admin
-        // Si l'objet Admin n'est pas nul, c'est que c'est un admin.
-        if (adminResult != null) { 
-            // NOTE: Vous devriez passer les informations de l'admin à votre gestionnaire d'état ici
-            Navigator.pushReplacementNamed(context, '/admin');
-        } else {
-            // Cette branche ne devrait pas être atteinte si loginAdmin réussit
-            Navigator.pushReplacementNamed(context, '/'); 
-        }
+        // Redirection vers la page admin
+        Navigator.pushReplacementNamed(context, '/admin');
       }
     } catch (e) {
-      setState(() {
-        _errorMessage = e.toString().replaceFirst('Exception: ', '');
-      });
-    } finally {
       if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(e.toString().replaceFirst('Exception: ', '')),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 3),
+          ),
+        );
       }
     }
   }
-  
-  // Couleurs personnalisées pour simuler l'arrière-plan
-  final Color _primaryColor = const Color(0xFF673AB7); // Un violet foncé
-  final Color _secondaryColor = const Color(0xFFE0E0F8); // Un fond très clair
-  final Color _textFieldFillColor = const Color(0xFFF2F3F8); // Couleur de remplissage des champs
-  final Color _cardColor = Colors.white; // La couleur de la carte centrale
 
   @override
   Widget build(BuildContext context) {
-    // Utiliser un décor de boîte pour simuler le dégradé en arrière-plan
+    final authState = ref.watch(authNotifierProvider);
+
     return Scaffold(
       body: Container(
         decoration: BoxDecoration(
@@ -104,7 +87,7 @@ class _LoginPageState extends State<LoginPage> {
           child: SingleChildScrollView(
             padding: const EdgeInsets.all(20.0),
             child: Container(
-              width: 400, // Limiter la largeur sur les grands écrans
+              width: 400,
               padding: const EdgeInsets.all(30.0),
               decoration: BoxDecoration(
                 color: _cardColor,
@@ -121,7 +104,7 @@ class _LoginPageState extends State<LoginPage> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // --- En-tête ---
+                  // En-tête
                   const Text(
                     'DZUMEVI Admin Login',
                     textAlign: TextAlign.center,
@@ -142,45 +125,25 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                   const SizedBox(height: 40),
 
-                  // --- Afficher les erreurs ---
-                  if (_errorMessage != null)
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 20.0),
-                      child: Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: Colors.red[100],
-                          border: Border.all(color: Colors.red[400]!),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(Icons.error_outline, color: Colors.red[700]),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Text(
-                                _errorMessage!,
-                                style: TextStyle(color: Colors.red[700]),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-
-                  // --- Formulaire ---
+                  // Formulaire
                   Form(
                     key: _formKey,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         // Champ Nom d'utilisateur
-                        const Text('Nom d\'utilisateur', style: TextStyle(fontWeight: FontWeight.w500, color: Colors.black54)),
+                        const Text(
+                          'Nom d\'utilisateur',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w500,
+                            color: Colors.black54,
+                          ),
+                        ),
                         const SizedBox(height: 8),
                         TextFormField(
                           controller: _nameController,
-                          enabled: !_isLoading,
-                          keyboardType: TextInputType.text, // Changé de email à text pour un nom d'utilisateur
+                          enabled: !authState.isLoading,
+                          keyboardType: TextInputType.text,
                           decoration: _inputDecoration(
                             hintText: 'Entrez votre nom d\'utilisateur',
                             suffixIcon: const Icon(Icons.person, color: Colors.grey),
@@ -196,11 +159,17 @@ class _LoginPageState extends State<LoginPage> {
                         const SizedBox(height: 16),
                         
                         // Champ Mot de passe
-                        const Text('Mot de passe', style: TextStyle(fontWeight: FontWeight.w500, color: Colors.black54)),
+                        const Text(
+                          'Mot de passe',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w500,
+                            color: Colors.black54,
+                          ),
+                        ),
                         const SizedBox(height: 8),
                         TextFormField(
                           controller: _passwordController,
-                          enabled: !_isLoading,
+                          enabled: !authState.isLoading,
                           obscureText: _obscurePassword,
                           decoration: _inputDecoration(
                             hintText: 'Entrez votre mot de passe',
@@ -231,7 +200,7 @@ class _LoginPageState extends State<LoginPage> {
                           height: 50,
                           width: 500,
                           child: ElevatedButton(
-                            onPressed: _isLoading ? null : _submitForm,
+                            onPressed: authState.isLoading ? null : _submitForm,
                             style: ElevatedButton.styleFrom(
                               backgroundColor: _primaryColor,
                               disabledBackgroundColor: _primaryColor.withOpacity(0.5),
@@ -239,7 +208,7 @@ class _LoginPageState extends State<LoginPage> {
                                 borderRadius: BorderRadius.circular(10),
                               ),
                             ),
-                            child: _isLoading
+                            child: authState.isLoading
                                 ? const SizedBox(
                                     width: 20,
                                     height: 20,
@@ -251,7 +220,7 @@ class _LoginPageState extends State<LoginPage> {
                                     ),
                                   )
                                 : const Text(
-                                    'Sign In',
+                                    'Se connecter',
                                     style: TextStyle(
                                       fontSize: 16,
                                       fontWeight: FontWeight.bold,
@@ -263,10 +232,6 @@ class _LoginPageState extends State<LoginPage> {
                       ],
                     ),
                   ),
-                  
-                  const SizedBox(height: 20),
-                  const SizedBox(height: 20),
-                  // --- Informations de démo ---
                 ],
               ),
             ),
@@ -276,7 +241,6 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  // Fonction utilitaire pour le style des champs de texte
   InputDecoration _inputDecoration({required String hintText, Widget? suffixIcon}) {
     return InputDecoration(
       hintText: hintText,
@@ -286,7 +250,7 @@ class _LoginPageState extends State<LoginPage> {
       fillColor: _textFieldFillColor,
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(10),
-        borderSide: BorderSide.none, // Supprimer la bordure par défaut
+        borderSide: BorderSide.none,
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(10),
@@ -294,7 +258,7 @@ class _LoginPageState extends State<LoginPage> {
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(10),
-        borderSide: BorderSide(color: _primaryColor, width: 2), // Bordure colorée au focus
+        borderSide: BorderSide(color: _primaryColor, width: 2),
       ),
     );
   }
