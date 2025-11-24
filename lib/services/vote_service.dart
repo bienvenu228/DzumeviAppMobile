@@ -5,7 +5,7 @@ import '../models/vote.dart'; // Importez le nouveau modèle
 class VoteService {
   // 🚨 IMPORTANT : Vérifiez et ajustez cette URL si nécessaire.
   // 10.0.2.2 est pour l'émulateur Android, utilisez votre IP locale pour un appareil physique.
-  final String _baseUrl = 'http://127.0.0.1:8000/api';
+  final String _baseUrl = 'http://192.168.0.212/Dzumevi_APi/public/api';
 
   Future<List<Vote>> fetchVotes() async {
     final response = await http.get(Uri.parse('$_baseUrl/votes'));

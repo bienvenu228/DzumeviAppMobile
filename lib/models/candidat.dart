@@ -3,7 +3,7 @@ class Candidat {
   final int id;
   final String? lastname; 
   final String firstname;
-  final String maticule;
+  final String matricule;
   final String categorie;
   final String? description;
   final String? photo;
@@ -16,7 +16,7 @@ class Candidat {
     required this.id,
     this.lastname,
     required this.firstname,
-    required this.maticule,
+    required this.matricule,
     required this.categorie,
     this.description,
     this.photo,
@@ -30,7 +30,7 @@ class Candidat {
       id: (json['id'] as num).toInt(),
       lastname: json['lastname'] as String?,
       firstname: json['firstname'] as String,
-      maticule: json['maticule'] as String,
+      matricule: json['matricule'] as String,
       categorie: json['categorie'] as String,
       description: json['description'] as String?,
       photo: json['photo'] as String?,
