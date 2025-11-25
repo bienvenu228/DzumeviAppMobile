@@ -1,45 +1,34 @@
-// lib/models/candidat.dart
+// lib/models/candidat.dart (version améliorée)
 class Candidat {
   final int id;
-  final String firstname;
-  final String matricule;
-  final String? description;
-  final String categorie;
-  final String? photo;
-  final int voteId;
-  final String? createdAt;
-  final String? updatedAt;
+  final String nom;
+  final String prenom;
+  final String photo;
+  final String description;
+  final int votes;
+  final int concoursId;
 
   Candidat({
     required this.id,
-    required this.firstname,
-    this.matricule,
-    this.description,
-    this.categorie,
-    this.photo,
-    required this.voteId,
-    this.createdAt,
-    this.updatedAt,
+    required this.nom,
+    required this.prenom,
+    this.photo = '',
+    this.description = '',
+    required this.votes,
+    required this.concoursId,
   });
 
   factory Candidat.fromJson(Map<String, dynamic> json) {
     return Candidat(
-      id: json['id'] ?? 0,
-      firstname: json['firstname']?.toString() ?? 'Nom inconnu', // Correction ici
-      matricule: json['matricule']?.toString(),
-      description: json['description']?.toString(),
-      categorie: json['categorie']?.toString(),
-      photo: json['photo']?.toString(),
-      voteId: json['vote_id'] ?? 0,
-      createdAt: json['created_at']?.toString(),
-      updatedAt: json['updated_at']?.toString(),
+      id: json['id'],
+      nom: json['nom'] ?? '',
+      prenom: json['prenom'] ?? '',
+      photo: json['photo'] ?? '',
+      description: json['description'] ?? '',
+      votes: json['votes'] ?? 0,
+      concoursId: json['concours_id'],
     );
   }
 
-  String get fullPhotoUrl {
-    if (photo == null || photo!.isEmpty) {
-      return '';
-    }
-    return "http://192.168.0.212/Dzumevi_APi/public/storage/$photo";
-  }
+  String get nomComplet => '$prenom $nom'.trim();
 }
