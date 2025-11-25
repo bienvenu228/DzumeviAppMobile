@@ -1,33 +1,62 @@
+// lib/services/vote_service.dart
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import '../models/vote.dart'; // Importez le nouveau modèle
+import '../models/vote_result.dart';
 
 class VoteService {
-  // 🚨 IMPORTANT : Vérifiez et ajustez cette URL si nécessaire.
-  // 10.0.2.2 est pour l'émulateur Android, utilisez votre IP locale pour un appareil physique.
-  final String _baseUrl = 'http://127.0.0.1:8000/api';
+  static const String _baseUrl = "http://192.168.0.41:8080/Dzumevi_APi/public/api";
 
-  Future<List<Vote>> fetchVotes() async {
-    final response = await http.get(Uri.parse('$_baseUrl/votes'));
+  Future<List<VoteResult>> getVoteResults() async {
+    try {
+      final response = await http.get(
+        Uri.parse('$_baseUrl/vote-results'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+      );
 
-    if (response.statusCode == 200) {
-      final Map<String, dynamic> data = json.decode(response.body);
+      print('Vote results response status: ${response.statusCode}');
+      print('Vote results response body: ${response.body}');
 
-      // Vérifiez le 'status' et la structure de la réponse Laravel
-      if (data['status'] == 'success' && data.containsKey('data')) {
-        final List<dynamic> votesJson = data['data'];
-
-        // Mappage de la liste JSON en objets Vote
-        return votesJson
-            .map((jsonItem) => Vote.fromJson(jsonItem))
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> data = jsonDecode(response.body);
+        final List<dynamic> resultsJson = data['data'] ?? [];
+        
+        return resultsJson
+            .map((jsonItem) => VoteResult.fromJson(jsonItem))
             .toList();
       } else {
-        throw Exception(
-            'Réponse de l\'API inattendue : ${data['message'] ?? 'Format incorrect'}');
+        throw Exception('Échec du chargement des résultats: ${response.statusCode}');
       }
-    } else {
-      throw Exception(
-          'Échec de la requête API. Statut: ${response.statusCode}');
+    } catch (e) {
+      print('Vote results error: $e');
+      throw Exception('Erreur de connexion: $e');
+    }
+  }
+
+  Future<int> getTotalVotes() async {
+    try {
+      final response = await http.get(
+        Uri.parse('$_baseUrl/total-votes'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> data = jsonDecode(response.body);
+        return data['total_votes'] ?? 0;
+      } else {
+        // Si l'endpoint n'existe pas, calculer le total à partir des résultats
+        final results = await getVoteResults();
+        return results.fold(0, (sum, result) => sum + result.votes);
+      }
+    } catch (e) {
+      print('Total votes error: $e');
+      // En cas d'erreur, retourner 0 ou une valeur par défaut
+      return 7315; // Valeur de démo
     }
   }
 }

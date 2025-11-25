@@ -1,221 +1,234 @@
+// lib/pages/candidat_list_page.dart
+import 'package:dzumevimobile/layout/CandidatCard.dart';
 import 'package:flutter/material.dart';
-// Assurez-vous que les chemins d'importation sont corrects pour votre projet
-import '../models/candidat.dart'; 
-import '../services/candidat_service.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../providers/candidat_provider.dart';
 
+<<<<<<< HEAD
 class CandidatListPage extends StatefulWidget {
+=======
+// Constantes de paiement
+const List<String> availablePaymentModes = ['mtn_open', 'moov', 'airtel', 't_money'];
+const double defaultVoteAmount = 100.0;
+const String defaultCurrency = 'XOF';
+const String defaultCountry = 'BJ';
+
+class CandidatListPage extends ConsumerStatefulWidget {
+>>>>>>> e04e2f31bb20ddeb618e18be476914093ede4958
   const CandidatListPage({super.key});
 
   @override
-  State<CandidatListPage> createState() => _CandidatListPageState();
+  ConsumerState<CandidatListPage> createState() => _CandidatListPageState();
 }
 
-class _CandidatListPageState extends State<CandidatListPage> {
-  // Initialisation du Future et du Service
-  late Future<List<Candidat>> _futureCandidats;
-  final CandidatService _candidatService = CandidatService();
+class _CandidatListPageState extends ConsumerState<CandidatListPage> {
+  final TextEditingController _searchController = TextEditingController();
+  bool _isSearching = false;
 
   @override
   void initState() {
     super.initState();
-    // Lance la fonction de récupération des données
-    _futureCandidats = _candidatService.fetchCandidats();
-  }
-
-  // Fonction pour rafraîchir la liste (utile si vous tirez vers le bas)
-  Future<void> _refreshCandidats() async {
-    setState(() {
-      _futureCandidats = _candidatService.fetchCandidats();
+    // Charger les candidats au démarrage
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(candidatNotifierProvider.notifier).loadCandidats();
     });
   }
 
-  // Fonction centrale pour gérer l'action de vote
-  void _handleVote(Candidat candidat) async {
-    // Afficher une boîte de dialogue de confirmation (au lieu d'alert())
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Confirmer le Vote'),
-          content: Text('Êtes-vous sûr de vouloir voter pour ${candidat.firstname} dans la catégorie ${candidat.categorie} ?'),
-          actions: <Widget>[
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(false),
-              child: const Text('Annuler', style: TextStyle(color: Colors.red)),
-            ),
-            ElevatedButton(
-              onPressed: () => Navigator.of(context).pop(true),
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.blue.shade800),
-              child: const Text('Voter'),
-            ),
-          ],
-        );
-      },
-    );
-
-    if (confirmed == true) {
-      // Afficher un indicateur de chargement
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Vote en cours...'), duration: Duration(seconds: 1)),
-      );
-
-      try {
-        // 🚨 Note: On utilise candidat.voteId. Assurez-vous que cette ID est correcte pour la logique de vote.
-        final response = await _candidatService.voteForCandidat(candidat.id, candidat.voteId);
-        
-        // Afficher le succès
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(response['message'] ?? 'Vote enregistré avec succès!'),
-            backgroundColor: Colors.green,
-          ),
-        );
-      } catch (e) {
-        // Afficher l'erreur
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Échec du vote: ${e.toString()}'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    }
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
+  void _refreshCandidats() async {
+    await ref.read(candidatNotifierProvider.notifier).loadCandidats();
+  }
 
   @override
   Widget build(BuildContext context) {
+    final candidatState = ref.watch(candidatNotifierProvider);
+    final candidatNotifier = ref.read(candidatNotifierProvider.notifier);
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Liste des Candidats'),
-        backgroundColor: Colors.blue.shade800,
-        elevation: 0,
-      ),
-      body: RefreshIndicator(
-        onRefresh: _refreshCandidats, // Permet de rafraîchir en tirant vers le bas
-        child: FutureBuilder<List<Candidat>>(
-          future: _futureCandidats,
-          builder: (context, snapshot) {
-            
-            // 1. État de Chargement
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Center(child: CircularProgressIndicator());
-            } 
-            
-            // 2. État d'Erreur
-            else if (snapshot.hasError) {
-              // Affiche l'erreur pour le débogage et l'utilisateur
-              return Center(
-                child: Text(
-                  '⚠️ Erreur de chargement: \n${snapshot.error}',
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(color: Colors.red, fontSize: 16),
+        title: _isSearching
+            ? TextField(
+                controller: _searchController,
+                decoration: const InputDecoration(
+                  hintText: 'Rechercher un candidat...',
+                  border: InputBorder.none,
+                  hintStyle: TextStyle(color: Colors.white70),
                 ),
-              );
-            } 
-            
-            // 3. État des Données Prêtes
-            else if (snapshot.hasData) {
-              final candidats = snapshot.data!;
-              
-              // 3.1. Liste Vide
-              if (candidats.isEmpty) {
-                return const Center(
-                  child: Text('Aucun candidat n\'a été créé dans le backend.', style: TextStyle(fontSize: 16)),
-                );
-              }
-
-              // 3.2. Affichage des Données (Liste)
-              return ListView.builder(
-                itemCount: candidats.length,
-                itemBuilder: (context, index) {
-                  final candidat = candidats[index];
-                  // Passe la fonction de vote au CandidatCard
-                  return CandidatCard(
-                    candidat: candidat,
-                    onVote: _handleVote,
-                  );
+                style: const TextStyle(color: Colors.white),
+                autofocus: true,
+                onChanged: (value) {
+                  candidatNotifier.searchCandidats(value);
                 },
-              );
-            }
-            
-            // 4. Fallback
-            return const Center(child: Text('Initialisation...'));
-          },
-        ),
+              )
+            : const Text('Toutes les candidates'),
+        elevation: 0,
+        actions: [
+          // Bouton recherche
+          IconButton(
+            icon: Icon(_isSearching ? Icons.close : Icons.search),
+            onPressed: () {
+              setState(() {
+                _isSearching = !_isSearching;
+                if (!_isSearching) {
+                  _searchController.clear();
+                  candidatNotifier.searchCandidats('');
+                }
+              });
+            },
+          ),
+          // Bouton rafraîchir
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: _refreshCandidats,
+          ),
+        ],
+      ),
+      body: Column(
+        children: [
+          // Filtres par catégorie (scroll horizontal pour mobile)
+          _buildCategoryFilter(candidatState, candidatNotifier),
+          
+          // Liste des candidats
+          Expanded(
+            child: _buildCandidatList(candidatState),
+          ),
+        ],
       ),
     );
   }
-}
 
-// Widget séparé pour l'affichage d'un seul candidat
-class CandidatCard extends StatelessWidget {
-  final Candidat candidat;
-  // Définir la fonction de rappel pour le vote
-  final Function(Candidat) onVote; 
-
-  const CandidatCard({super.key, required this.candidat, required this.onVote});
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      elevation: 4,
-      margin: const EdgeInsets.symmetric(horizontal: 15, vertical: 8),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-      child: Padding(
-        padding: const EdgeInsets.all(12.0),
-        child: Column(
-          children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Image/Avatar
-                CircleAvatar(
-                  radius: 30,
-                  backgroundColor: Colors.blue.shade100,
-                  child: candidat.photo != null 
-                      ? Image.network(candidat.photo!) // Affiche l'image
-                      : Text(candidat.firstname[0], style: TextStyle(fontSize: 24, color: Colors.blue.shade900)), // Affiche l'initiale
-                ),
-                const SizedBox(width: 12),
-                // Informations
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        candidat.firstname,
-                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
-                      ),
-                      const SizedBox(height: 4),
-                      Text('Matricule: ${candidat.maticule}', style: const TextStyle(fontSize: 14)),
-                      Text('Catégorie: ${candidat.categorie}', style: const TextStyle(fontSize: 14)),
-                      if (candidat.description != null && candidat.description!.isNotEmpty)
-                        Text('Description: ${candidat.description}', style: const TextStyle(fontStyle: FontStyle.italic, fontSize: 14)),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            const Divider(height: 20),
-            // NOUVEAU BOUTON DE VOTE
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                onPressed: () => onVote(candidat), // Appel de la fonction de vote
-                icon: const Icon(Icons.thumb_up_alt_rounded, size: 20),
-                label: const Text('VOTER POUR CE CANDIDAT', style: TextStyle(fontWeight: FontWeight.bold)),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.green.shade600, 
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                ),
+  Widget _buildCategoryFilter(CandidatState state, CandidatNotifier notifier) {
+    return Container(
+      height: 50,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        itemCount: state.categories.length,
+        itemBuilder: (context, index) {
+          final category = state.categories[index];
+          final isSelected = state.selectedCategory == category;
+          
+          return Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: FilterChip(
+              label: Text(category),
+              selected: isSelected,
+              onSelected: (selected) {
+                notifier.filterByCategory(category);
+              },
+              backgroundColor: isSelected ? Theme.of(context).primaryColor : Colors.grey[200],
+              labelStyle: TextStyle(
+                color: isSelected ? Colors.white : Colors.black87,
               ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildCandidatList(CandidatState state) {
+    if (state.isLoading) {
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.all(30.0),
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+
+    if (state.error != null) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.error_outline, size: 64, color: Colors.red),
+              const SizedBox(height: 16),
+              Text(
+                'Erreur de chargement',
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                state.error!,
+                textAlign: TextAlign.center,
+                style: const TextStyle(color: Colors.red),
+              ),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: _refreshCandidats,
+                child: const Text('Réessayer'),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    final candidatsToShow = state.searchQuery.isNotEmpty || state.selectedCategory != 'Tous'
+        ? state.filteredCandidats
+        : state.candidats;
+
+    if (candidatsToShow.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.people_outline, size: 64, color: Colors.grey),
+            const SizedBox(height: 16),
+            Text(
+              state.searchQuery.isNotEmpty ? 'Aucun résultat' : 'Aucun candidat',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              state.searchQuery.isNotEmpty
+                  ? 'Aucun candidat ne correspond à votre recherche'
+                  : 'Aucun candidat n\'a été créé dans le backend',
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: Colors.grey),
             ),
           ],
         ),
+      );
+    }
+
+    return RefreshIndicator(
+      onRefresh: () async => _refreshCandidats(),
+      child: GridView.builder(
+        padding: const EdgeInsets.all(12.0),
+        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: _getCrossAxisCount(context),
+          childAspectRatio: _getChildAspectRatio(context),
+          crossAxisSpacing: 12.0,
+          mainAxisSpacing: 12.0,
+        ),
+        itemCount: candidatsToShow.length,
+        itemBuilder: (context, index) {
+          final candidat = candidatsToShow[index];
+          return CandidatCard(candidat: candidat);
+        },
       ),
     );
+  }
+
+  int _getCrossAxisCount(BuildContext context) {
+    final width = MediaQuery.of(context).size.width;
+    if (width < 600) return 2; // Mobile
+    if (width < 900) return 3; // Tablet
+    return 4; // Desktop
+  }
+
+  double _getChildAspectRatio(BuildContext context) {
+    final width = MediaQuery.of(context).size.width;
+    if (width < 600) return 0.65; // Mobile - plus étroit
+    return 0.55; // Tablet/Desktop
   }
 }
