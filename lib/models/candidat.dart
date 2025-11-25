@@ -1,43 +1,34 @@
-// --- MODÈLE CANDIDAT (Adapté à la réponse JSON de CandidatsController) ---
+// lib/models/candidat.dart (version améliorée)
 class Candidat {
   final int id;
-  final String? lastname; 
-  final String firstname;
-  final String matricule;
-  final String categorie;
-  final String? description;
-  final String? photo;
-  // ⭐️ CORRECTION : RETIRER FINAL ICI ⭐️
-  int votes; // Rendre non-final pour pouvoir l'incrémenter via setState
-  final int age; 
-  final int voteId;
+  final String nom;
+  final String prenom;
+  final String photo;
+  final String description;
+  final int votes;
+  final int concoursId;
 
   Candidat({
     required this.id,
-    this.lastname,
-    required this.firstname,
-    required this.matricule,
-    required this.categorie,
-    this.description,
-    this.photo,
-    required this.votes, // Laisser requis dans le constructeur
-    required this.age,
-    required this.voteId,
+    required this.nom,
+    required this.prenom,
+    this.photo = '',
+    this.description = '',
+    required this.votes,
+    required this.concoursId,
   });
 
   factory Candidat.fromJson(Map<String, dynamic> json) {
     return Candidat(
-      id: (json['id'] as num).toInt(),
-      lastname: json['lastname'] as String?,
-      firstname: json['firstname'] as String,
-      matricule: json['matricule'] as String,
-      categorie: json['categorie'] as String,
-      description: json['description'] as String?,
-      photo: json['photo'] as String?,
-      votes: (json['votes'] as num? ?? 0).toInt(), 
-      age: (json['age'] as num? ?? 20).toInt(),
-      voteId: (json['vote_id'] as num).toInt(),
+      id: json['id'],
+      nom: json['nom'] ?? '',
+      prenom: json['prenom'] ?? '',
+      photo: json['photo'] ?? '',
+      description: json['description'] ?? '',
+      votes: json['votes'] ?? 0,
+      concoursId: json['concours_id'],
     );
   }
+
+  String get nomComplet => '$prenom $nom'.trim();
 }
-// -----------------------------------------------------------------------------------
