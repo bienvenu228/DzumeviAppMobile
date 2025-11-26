@@ -1,8 +1,14 @@
 // lib/screens/paiement_screen.dart
 import 'package:dzumevimobile/core/constants.dart';
+import 'package:dzumevimobile/widgets/paiement_form.dart';
 import 'package:flutter/material.dart';
 import '../models/concours.dart';
 import '../models/candidat.dart';
+// NOTE: Assurez-vous d'avoir 'http' dans votre pubspec.yaml pour les appels API
+// import 'package:http/http.dart' as http; 
+// import 'dart:convert';
+
+// --- (Le code de AppConstants et ThemeColors est supposé être dans 'package:dzumevimobile/core/constants.dart') ---
 
 class PaiementScreen extends StatelessWidget {
   final Candidat candidat;
@@ -18,17 +24,19 @@ class PaiementScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Paiement"),
+        title: const Text("Voter & Payer"),
         backgroundColor: AppConstants.primary,
         foregroundColor: Colors.white,
       ),
-      body: Padding(
+      body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // En-tête
+            // --- EN-TÊTE RÉCAPITULATIF DU CANDIDAT ---
             Card(
+              elevation: 4,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
               child: Padding(
                 padding: const EdgeInsets.all(16),
                 child: Row(
@@ -38,6 +46,7 @@ class PaiementScreen extends StatelessWidget {
                       backgroundImage: candidat.photo != null 
                           ? NetworkImage(candidat.photo!) 
                           : const AssetImage('assets/default_avatar.png') as ImageProvider,
+                      backgroundColor: Colors.grey[200],
                     ),
                     const SizedBox(width: 16),
                     Expanded(
@@ -46,13 +55,14 @@ class PaiementScreen extends StatelessWidget {
                         children: [
                           Text(
                             candidat.fullName,
-                            style: const TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                            ),
+                            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                           ),
                           Text(
-                            candidat.categorie,
+                            "Concours: ${concours.name}",
+                            style: const TextStyle(color: Colors.blueGrey, fontSize: 14),
+                          ),
+                          Text(
+                            "Catégorie: ${candidat.categorie}",
                             style: const TextStyle(color: Colors.grey),
                           ),
                         ],
@@ -63,30 +73,38 @@ class PaiementScreen extends StatelessWidget {
               ),
             ),
             
-            const SizedBox(height: 20),
+            const SizedBox(height: 30),
             
-            // Formulaire de paiement
+            // --- TITRE DU FORMULAIRE ---
             const Text(
-              "Formulaire de paiement - À implémenter",
-              style: TextStyle(fontSize: 16),
+              "🗳️ Payer pour voter (FedaPay)",
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF333333)),
+            ),
+            const Divider(height: 20, thickness: 1),
+
+            // --- FORMULAIRE DE PAIEMENT FEDAPAY INTÉGRÉ ---
+            FedaPayPaymentForm(
+              candidat: candidat,
+              concours: concours,
+              prixUnitaire: AppConstants.prixParVote,
             ),
             
-            const Spacer(),
+            const SizedBox(height: 30),
             
-            // Bouton de retour
+            // --- BOUTON DE RETOUR ---
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
                 onPressed: () => Navigator.pop(context),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppConstants.primary,
+                  backgroundColor: AppConstants.accent, // Couleur Rouge
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
                 ),
-                child: const Text("Retour"),
+                child: const Text("Retour à la liste", style: TextStyle(fontSize: 16)),
               ),
             ),
           ],

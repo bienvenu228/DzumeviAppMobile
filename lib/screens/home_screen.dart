@@ -1,9 +1,11 @@
+// lib/screens/home_screen.dart
 import 'package:dzumevimobile/core/provider/concours.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../core/constants.dart';
 import '../models/concours.dart';
-import 'candidats_screen.dart';
+import '../screens/candidats_screen.dart';
+import '../models/candidat.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -11,7 +13,6 @@ class HomeScreen extends StatefulWidget {
   @override
   State<HomeScreen> createState() => _HomeScreenState();
 }
-
 class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
@@ -41,9 +42,7 @@ class _HomeScreenState extends State<HomeScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.info_outline),
-            onPressed: () {
-              _showAppInfo(context);
-            },
+            onPressed: () => _showAppInfo(context),
           ),
         ],
       ),
@@ -64,9 +63,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildContent(ConcoursProvider provider) {
     if (provider.isLoading && provider.concoursList.isEmpty) {
-      return const Center(
-        child: CircularProgressIndicator(),
-      );
+      return const Center(child: CircularProgressIndicator());
     }
 
     if (provider.error.isNotEmpty && provider.concoursList.isEmpty) {
@@ -92,45 +89,43 @@ class _HomeScreenState extends State<HomeScreen> {
       itemCount: concoursActifs.length,
       itemBuilder: (context, index) {
         final concours = concoursActifs[index];
-        return _buildConcoursCard(concours);
+        return _buildConcoursCard(concours, provider);
       },
     );
   }
 
-  Widget _buildConcoursCard(Concours concours) {
+  Widget _buildConcoursCard(Concours concours, ConcoursProvider provider) {
     return GestureDetector(
-      onTap: () => Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => CandidatsScreen(concours: concours),
-        ),
-      ),
+      onTap: () async {
+        // Naviguer vers CandidatsScreen et attendre le retour
+        final List<Candidat>? updatedCandidats = await Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => CandidatsScreen(concours: concours),
+          ),
+        );
+
+        // Mettre à jour le nombre de votes et candidats si on a des données
+        if (updatedCandidats != null) {
+          // Les champs du modèle Concours sont immuables (final) — ne pas les modifier directement.
+          // Reload les concours depuis le provider pour récupérer les valeurs mises à jour
+          // et forcer la reconstruction de l'UI.
+          await provider.loadAllConcours();
+          setState(() {});
+        }
+      },
       child: Card(
         elevation: 10,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         margin: const EdgeInsets.only(bottom: 20),
         child: Stack(
           children: [
-            // Image de fond avec fallback
+            // Fond par défaut
             ClipRRect(
               borderRadius: BorderRadius.circular(20),
-              child: concours.imageUrl != null && concours.imageUrl!.isNotEmpty
-                  ? Image.network(
-                      concours.imageUrl!,
-                      height: 220,
-                      width: double.infinity,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) {
-                        return _buildDefaultBackground();
-                      },
-                      loadingBuilder: (context, child, loadingProgress) {
-                        if (loadingProgress == null) return child;
-                        return _buildDefaultBackground();
-                      },
-                    )
-                  : _buildDefaultBackground(),
+              child: _buildDefaultBackground(),
             ),
-            
+
             // Dégradé overlay
             Container(
               height: 220,
@@ -143,7 +138,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
             ),
-            
+
             // Contenu texte
             Positioned(
               bottom: 20,
@@ -192,7 +187,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ],
               ),
             ),
-            
+
             // Badge statut
             Positioned(
               top: 16,
