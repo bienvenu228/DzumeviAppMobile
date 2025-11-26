@@ -1,60 +1,88 @@
-import 'package:dzumevimobile/models/candidat.dart';
-import 'package:dzumevimobile/models/concours.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
+// import 'package:dio/dio.dart';
+// import 'package:dzumevimobile/models/candidat.dart';
+// import 'package:dzumevimobile/models/concours.dart';
 
-class ApiService {
-  static String baseUrl = "http://192.168.0.41:8080/Dzumevi_APi/public/api";
+// class ApiService {
+//   // Base URL vers ton Laravel accessible depuis Flutter Web ou mobile
+//   static const baseUrl = "http://192.168.0.41:8080/Dzumevi_APi/public/api/";
 
-  static Future<List<Concours>> getConcours() async {
-    final response = await http.get(Uri.parse('$baseUrl/concours'));
-       print(response.body);
-    if (response.statusCode == 200) {
-      List jsonResponse = json.decode(response.body);
-      print(jsonResponse);
-      return jsonResponse.map((c) => Concours.fromJson(c)).toList();
-    } else {
-      throw Exception('Erreur chargement concours');
-    }
-  }
+//   static final Dio dio = Dio(
+//     BaseOptions(
+//       baseUrl: baseUrl,
+//       connectTimeout: const Duration(seconds: 30),
+//       receiveTimeout: const Duration(seconds: 30),
+//       headers: {'Accept': 'application/json'},
+//     ),
+//   );
 
-  static Future<List<Candidat>> getCandidats(int concoursId) async {
-    final response = await http.get(
-      Uri.parse('$baseUrl/concours/$concoursId/candidats'),
-    );
-   
-    if (response.statusCode == 200) {
-      List jsonResponse = json.decode(response.body);
-      return jsonResponse.map((c) => Candidat.fromJson(c)).toList();
-    } else {
-      throw Exception('Erreur candidats');
-    }
-  }
+//   // -----------------------------------
+//   // Récupérer tous les concours
+//   // -----------------------------------
+//   static Future<List<Concours>> getConcours() async {
+//     try {
+//       final response = await dio.get('concours');
 
-  // Cette fonction appelle ton endpoint qui redirige vers TMoney/Flooz
-  static Future<Map<String, dynamic>> initierPaiement({
-    required int candidatId,
-    required String nomVotant,
-    required int nombreVotes,
-    required String telephone,
-    required String operateur, // "t-money" ou "flooz"
-  }) async {
-    final response = await http.post(
-      Uri.parse('$baseUrl/paiement/initier'),
-      headers: {'Content-Type': 'application/json'},
-      body: json.encode({
-        'candidat_id': candidatId,
-        'nom_votant': nomVotant,
-        'nombre_votes': nombreVotes,
-        'telephone': telephone,
-        'operateur': operateur,
-      }),
-    );
+//       // response.data est déjà Map<String, dynamic>
+//       final decodedData = response.data as Map<String, dynamic>;
+//       print("Réponse API getConcours: $decodedData");
 
-    if (response.statusCode == 200) {
-      return json.decode(response.body);
-    } else {
-      throw Exception('Erreur paiement: ${response.body}');
-    }
-  }
-}
+//       // Assurer que 'data' est une liste
+//       final dataList = decodedData['data'] as List<dynamic>? ?? [];
+
+//       return dataList.map((json) => Concours.fromJson(json)).toList();
+//     } catch (e) {
+//       print("Erreur  getConcours: $e");
+//       throw Exception('Erreur getConcours: $e');
+//     }
+//   }
+
+//   // -----------------------------------
+//   // Récupérer les candidats d'un concours
+//   // -----------------------------------
+//   static Future<List<Candidat>> getCandidats(int concoursId) async {
+//     try {
+//       final response = await dio.get('concours/$concoursId/candidats');
+
+//       final decodedData = response.data as Map<String, dynamic>;
+//       print("Réponse API getCandidats: $decodedData");
+
+//       final dataList = decodedData['data'] as List<dynamic>? ?? [];
+//       return dataList.map((json) => Candidat.fromJson(json)).toList();
+//     } catch (e) {
+//       print("Erreur réseau/CORS getCandidats: $e");
+//       throw Exception('Erreur réseau/CORS getCandidats: $e');
+//     }
+//   }
+
+//   // -----------------------------------
+//   // Initier un paiement
+//   // -----------------------------------
+//   static Future<Map<String, dynamic>> initierPaiement({
+//     required int candidatId,
+//     required String nomVotant,
+//     required int nombreVotes,
+//     required String telephone,
+//     required String operateur,
+//   }) async {
+//     try {
+//       final response = await dio.post(
+//         'paiement/initier',
+//         data: {
+//           'candidat_id': candidatId,
+//           'nom_votant': nomVotant,
+//           'nombre_votes': nombreVotes,
+//           'telephone': telephone,
+//           'operateur': operateur,
+//         },
+//       );
+
+//       final decodedData = response.data as Map<String, dynamic>;
+//       print("Réponse API initierPaiement: $decodedData");
+
+//       return decodedData;
+//     } catch (e) {
+//       print("Erreur initierPaiement: $e");
+//       throw Exception('Erreur initierPaiement: $e');
+//     }
+//   }
+// }

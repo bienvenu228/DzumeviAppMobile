@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:flutter/painting.dart';
 
 class AppConstants {
@@ -24,4 +25,13 @@ class AppConstants {
   // URLs (dev / prod)
   static const String privacyPolicyUrl = "https://dzumevi.com/privacy";
   static const String termsUrl = "https://dzumevi.com/terms";
+}
+
+extension ThemeColors on BuildContext {
+  Color get primary => Theme.of(this).primaryColor;
+  Color get secondary => Theme.of(this).colorScheme.secondary;
+  Color get tMoney => AppConstants.tMoneyColor;
+  Color get flooz => AppConstants.floozColor;
+  Color get background => Theme.of(this).colorScheme.background;
+  Color get surface => Theme.of(this).colorScheme.surface;
 }

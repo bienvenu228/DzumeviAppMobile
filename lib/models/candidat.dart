@@ -1,34 +1,50 @@
-// lib/models/candidat.dart (version améliorée)
+// lib/models/candidat.dart
 class Candidat {
   final int id;
-  final String nom;
-  final String prenom;
-  final String photo;
+  final String firstname;
+  final String lastname;
   final String description;
+  final String categorie;
+  final String matricule;
   final int votes;
-  final int concoursId;
+  final String? photo;
 
   Candidat({
     required this.id,
-    required this.nom,
-    required this.prenom,
-    this.photo = '',
-    this.description = '',
+    required this.firstname,
+    required this.lastname,
+    required this.description,
+    required this.categorie,
+    required this.matricule,
     required this.votes,
-    required this.concoursId,
+    this.photo,
   });
+
+  String get fullName => '$firstname $lastname';
 
   factory Candidat.fromJson(Map<String, dynamic> json) {
     return Candidat(
-      id: json['id'],
-      nom: json['nom'] ?? '',
-      prenom: json['prenom'] ?? '',
-      photo: json['photo'] ?? '',
+      id: json['id'] ?? 0,
+      firstname: json['firstname'] ?? '',
+      lastname: json['lastname'] ?? '',
       description: json['description'] ?? '',
+      categorie: json['categorie'] ?? '',
+      matricule: json['matricule'] ?? '',
       votes: json['votes'] ?? 0,
-      concoursId: json['concours_id'],
+      photo: json['photo'],
     );
   }
 
-  String get nomComplet => '$prenom $nom'.trim();
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'firstname': firstname,
+      'lastname': lastname,
+      'description': description,
+      'categorie': categorie,
+      'matricule': matricule,
+      'votes': votes,
+      'photo': photo,
+    };
+  }
 }
