@@ -1,6 +1,7 @@
 // lib/services/concours_api_service.dart
 import 'dart:convert';
 import 'package:dzumevimobile/models/concours.dart';
+import 'package:dzumevimobile/models/candidat.dart';
 import 'package:http/http.dart' as http;
 
 class ConcoursApiService {
@@ -55,6 +56,34 @@ class ConcoursApiService {
 
         if (jsonResponse['success'] == true) {
           return Concours.fromJson(jsonResponse['data']);
+        } else {
+          throw Exception('Erreur API: ${jsonResponse['message']}');
+        }
+      } else {
+        throw Exception('Erreur HTTP ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Erreur de connexion: $e');
+    }
+  }
+
+  /// Récupère les candidats liés à un concours spécifique
+  Future<List<Candidat>> getCandidatesByConcours(int concoursId) async {
+    try {
+      final response = await client.get(
+        Uri.parse('$baseUrl/api/concours/$concoursId/candidats'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> jsonResponse = json.decode(response.body);
+
+        if (jsonResponse['success'] == true) {
+          final List<dynamic> data = jsonResponse['data'];
+          return data.map((item) => Candidat.fromJson(item)).toList();
         } else {
           throw Exception('Erreur API: ${jsonResponse['message']}');
         }
