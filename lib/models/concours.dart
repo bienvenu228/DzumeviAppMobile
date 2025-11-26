@@ -1,4 +1,3 @@
-
 import 'package:dzumevimobile/core/enums/concours_statut.dart';
 
 class Concours {
@@ -8,7 +7,6 @@ class Concours {
   final DateTime date;
   final DateTime echeance;
   final ConcoursStatut statut;
-  final String? imageUrl;
   final int nombreCandidats;
   final int nombreVotes;
 
@@ -19,7 +17,6 @@ class Concours {
     required this.date,
     required this.echeance,
     required this.statut,
-    this.imageUrl,
     this.nombreCandidats = 0,
     this.nombreVotes = 0,
   });
@@ -29,10 +26,9 @@ class Concours {
       id: json['id'] ?? 0,
       name: json['name'] ?? '',
       description: json['description'] ?? '',
-      date: DateTime.parse(json['date']),
-      echeance: DateTime.parse(json['echeance']),
-      statut: ConcoursStatut.fromString(json['statut']),
-      imageUrl: json['image_url'],
+      date: json['date'] != null ? DateTime.parse(json['date']) : DateTime.now(),
+      echeance: json['echeance'] != null ? DateTime.parse(json['echeance']) : DateTime.now(),
+      statut: ConcoursStatut.fromString(json['statut'] ?? ''),
       nombreCandidats: json['nombre_candidats'] ?? 0,
       nombreVotes: json['nombre_votes'] ?? 0,
     );
@@ -46,7 +42,6 @@ class Concours {
       'date': date.toIso8601String(),
       'echeance': echeance.toIso8601String(),
       'statut': statut.value,
-      'image_url': imageUrl,
       'nombre_candidats': nombreCandidats,
       'nombre_votes': nombreVotes,
     };
