@@ -22,7 +22,7 @@ class ConcoursApiService {
           'Accept': 'application/json',
         },
       );
-
+      print(response);
       if (response.statusCode == 200) {
         final Map<String, dynamic> jsonResponse = json.decode(response.body);
 
