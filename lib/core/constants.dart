@@ -16,8 +16,8 @@ class AppConstants {
   static const Color floozColor = Color(0xFF0066CC); // Bleu Moov
 
   // Textes
-  static const String appName = "Dzumevi";
-  static const String slogan = "Votez avec votre cœur, payez avec votre mobile";
+  static const String appName = "Avec Dzumevi";
+  static const String slogan = "Voter devient plus simple";
 
   // Tarification (à rendre dynamique plus tard via API)
   static const int prixParVote = 100; // FCFA

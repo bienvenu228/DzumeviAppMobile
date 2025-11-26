@@ -41,9 +41,7 @@ class _HomeScreenState extends State<HomeScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.info_outline),
-            onPressed: () {
-              _showAppInfo(context);
-            },
+            onPressed: () => _showAppInfo(context),
           ),
         ],
       ),
@@ -64,9 +62,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildContent(ConcoursProvider provider) {
     if (provider.isLoading && provider.concoursList.isEmpty) {
-      return const Center(
-        child: CircularProgressIndicator(),
-      );
+      return const Center(child: CircularProgressIndicator());
     }
 
     if (provider.error.isNotEmpty && provider.concoursList.isEmpty) {
@@ -101,9 +97,7 @@ class _HomeScreenState extends State<HomeScreen> {
     return GestureDetector(
       onTap: () => Navigator.push(
         context,
-        MaterialPageRoute(
-          builder: (_) => CandidatsScreen(concours: concours),
-        ),
+        MaterialPageRoute(builder: (_) => CandidatsScreen(concours: concours)),
       ),
       child: Card(
         elevation: 10,
@@ -111,26 +105,12 @@ class _HomeScreenState extends State<HomeScreen> {
         margin: const EdgeInsets.only(bottom: 20),
         child: Stack(
           children: [
-            // Image de fond avec fallback
+            // Fond par défaut
             ClipRRect(
               borderRadius: BorderRadius.circular(20),
-              child: concours.imageUrl != null && concours.imageUrl!.isNotEmpty
-                  ? Image.network(
-                      concours.imageUrl!,
-                      height: 220,
-                      width: double.infinity,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) {
-                        return _buildDefaultBackground();
-                      },
-                      loadingBuilder: (context, child, loadingProgress) {
-                        if (loadingProgress == null) return child;
-                        return _buildDefaultBackground();
-                      },
-                    )
-                  : _buildDefaultBackground(),
+              child: _buildDefaultBackground(),
             ),
-            
+
             // Dégradé overlay
             Container(
               height: 220,
@@ -143,7 +123,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
             ),
-            
+
             // Contenu texte
             Positioned(
               bottom: 20,
@@ -192,7 +172,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ],
               ),
             ),
-            
+
             // Badge statut
             Positioned(
               top: 16,
