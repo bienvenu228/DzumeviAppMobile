@@ -1,9 +1,11 @@
+// lib/screens/home_screen.dart
 import 'package:dzumevimobile/core/provider/concours.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../core/constants.dart';
 import '../models/concours.dart';
-import 'candidats_screen.dart';
+import '../screens/candidats_screen.dart';
+import '../models/candidat.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -87,17 +89,31 @@ class _HomeScreenState extends State<HomeScreen> {
       itemCount: concoursActifs.length,
       itemBuilder: (context, index) {
         final concours = concoursActifs[index];
-        return _buildConcoursCard(concours);
+        return _buildConcoursCard(concours, provider);
       },
     );
   }
 
-  Widget _buildConcoursCard(Concours concours) {
+  Widget _buildConcoursCard(Concours concours, ConcoursProvider provider) {
     return GestureDetector(
-      onTap: () => Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => CandidatsScreen(concours: concours)),
-      ),
+      onTap: () async {
+        // Naviguer vers CandidatsScreen et attendre le retour
+        final List<Candidat>? updatedCandidats = await Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => CandidatsScreen(concours: concours),
+          ),
+        );
+
+        // Mettre à jour le nombre de votes et candidats si on a des données
+        if (updatedCandidats != null) {
+          // Les champs du modèle Concours sont immuables (final) — ne pas les modifier directement.
+          // Reload les concours depuis le provider pour récupérer les valeurs mises à jour
+          // et forcer la reconstruction de l'UI.
+          await provider.loadAllConcours();
+          setState(() {});
+        }
+      },
       child: Card(
         elevation: 10,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
