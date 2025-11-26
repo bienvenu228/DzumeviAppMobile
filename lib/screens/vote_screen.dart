@@ -1,121 +1,95 @@
-import 'package:dzumevimobile/core/services/api_service.dart';
-import 'package:dzumevimobile/models/candidat.dart';
-import 'package:dzumevimobile/screens/success_screen.dart';
-import 'package:dzumevimobile/widgets/candidat_card.dart';
+// lib/screens/paiement_screen.dart
+import 'package:dzumevimobile/core/constants.dart';
 import 'package:flutter/material.dart';
-import 'package:url_launcher/url_launcher.dart';
+import '../models/concours.dart';
+import '../models/candidat.dart';
 
-class VoteScreen extends StatefulWidget {
+class PaiementScreen extends StatelessWidget {
   final Candidat candidat;
-  const VoteScreen({required this.candidat});
+  final Concours concours;
 
-  @override
-  _VoteScreenState createState() => _VoteScreenState();
-}
-
-class _VoteScreenState extends State<VoteScreen> {
-  final _formKey = GlobalKey<FormState>();
-  String nom = '';
-  String telephone = '';
-  int nombreVotes = 1;
-  String operateur = 't-money';
-  bool isLoading = false;
+  const PaiementScreen({
+    Key? key,
+    required this.candidat,
+    required this.concours,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    int montant = nombreVotes * 100; // 100 FCFA par vote (à rendre configurable)
-
     return Scaffold(
-      appBar: AppBar(title: Text("Voter pour ${widget.candidat.prenom} ${widget.candidat.nom}")),
+      appBar: AppBar(
+        title: const Text("Paiement"),
+        backgroundColor: AppConstants.primary,
+        foregroundColor: Colors.white,
+      ),
       body: Padding(
-        padding: EdgeInsets.all(16),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            children: [
-              // Photo + infos candidat
-              CandidatCard(candidat: widget.candidat, showVotes: true),
-              SizedBox(height: 20),
-
-              TextFormField(
-                decoration: InputDecoration(labelText: "Votre nom complet"),
-                validator: (v) => v!.isEmpty ? "Obligatoire" : null,
-                onChanged: (v) => nom = v,
-              ),
-              TextFormField(
-                decoration: InputDecoration(labelText: "Téléphone (ex: 90112233)"),
-                keyboardType: TextInputType.phone,
-                validator: (v) => v!.length < 8 ? "Numéro invalide" : null,
-                onChanged: (v) => telephone = v,
-              ),
-
-              SizedBox(height: 20),
-              Text("Nombre de votes", style: TextStyle(fontSize: 18)),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  IconButton(onPressed: () => setState(() => nombreVotes > 1 ? nombreVotes-- : null), icon: Icon(Icons.remove)),
-                  Text("$nombreVotes vote(s)", style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-                  IconButton(onPressed: () => setState(() => nombreVotes++), icon: Icon(Icons.add)),
-                ],
-              ),
-              Text("Montant total : $montant FCFA", style: TextStyle(fontSize: 20, color: Colors.green, fontWeight: FontWeight.bold)),
-
-              SizedBox(height: 20),
-              DropdownButtonFormField<String>(
-                value: operateur,
-                items: [
-                  DropdownMenuItem(value: "t-money", child: Text("TMoney (Togocel)")),
-                  DropdownMenuItem(value: "flooz", child: Text("Flooz (Moov)")),
-                ],
-                onChanged: (v) => setState(() => operateur = v!),
-              ),
-
-              SizedBox(height: 30),
-              isLoading
-                  ? CircularProgressIndicator()
-                  : ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.purple,
-                        padding: EdgeInsets.symmetric(vertical: 16),
-                        minimumSize: Size(double.infinity, 50),
-                      ),
-                      onPressed: () async {
-                        if (_formKey.currentState!.validate()) {
-                          setState(() => isLoading = true);
-                          try {
-                            var result = await ApiService.initierPaiement(
-                              candidatId: widget.candidat.id,
-                              nomVotant: nom,
-                              nombreVotes: nombreVotes,
-                              telephone: telephone,
-                              operateur: operateur,
-                            );
-
-                            // L'API te renvoie normalement une URL de paiement ou un code USSD
-                            String paymentUrl = result['payment_url'];
-                            // ou result['ussd_code']
-
-                            if (paymentUrl.startsWith('http')) {
-                              launchUrl(Uri.parse(paymentUrl));
-                            } else {
-                              // Afficher code USSD
-                              ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Composez $paymentUrl")));
-                            }
-
-                            // Optionnel : polling pour vérifier si paiement réussi
-                            Navigator.push(context, MaterialPageRoute(builder: (_) => SuccessScreen(nombreVotes: nombreVotes, candidat: widget.candidat)));
-
-                          } catch (e) {
-                            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Erreur: $e")));
-                          }
-                          setState(() => isLoading = false);
-                        }
-                      },
-                      child: Text("PAYER $montant FCFA ET VOTER", style: TextStyle(fontSize: 18, color: Colors.white)),
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // En-tête
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Row(
+                  children: [
+                    CircleAvatar(
+                      radius: 30,
+                      backgroundImage: candidat.photo != null 
+                          ? NetworkImage(candidat.photo!) 
+                          : const AssetImage('assets/default_avatar.png') as ImageProvider,
                     ),
-            ],
-          ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            candidat.fullName,
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          Text(
+                            candidat.categorie,
+                            style: const TextStyle(color: Colors.grey),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            
+            const SizedBox(height: 20),
+            
+            // Formulaire de paiement
+            const Text(
+              "Formulaire de paiement - À implémenter",
+              style: TextStyle(fontSize: 16),
+            ),
+            
+            const Spacer(),
+            
+            // Bouton de retour
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () => Navigator.pop(context),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppConstants.primary,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                child: const Text("Retour"),
+              ),
+            ),
+          ],
         ),
       ),
     );

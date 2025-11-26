@@ -1,8 +1,13 @@
-// lib/main.dart → VERSION FINALE SANS AUCUNE ERREUR (Web + Android + iOS)
+
+import 'package:dzumevimobile/core/constants.dart';
+import 'package:dzumevimobile/core/provider/concours.dart';
+import 'package:dzumevimobile/core/services/concours_api.dart';
+import 'package:dzumevimobile/core/theme.dart';
+import 'package:dzumevimobile/screens/home_screen.dart';
 import 'package:flutter/material.dart';
-import 'core/constants.dart';
-import 'core/theme.dart';
-import 'screens/home_screen.dart';
+import 'package:provider/provider.dart';
+import 'package:http/http.dart' as http;
+
 
 void main() {
   runApp(const DzumeviApp());
@@ -13,11 +18,23 @@ class DzumeviApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: AppConstants.appName,
-      debugShowCheckedModeBanner: false,
-      theme: AppTheme.lightTheme,
-      home: const SplashEntry(),
+    return MultiProvider(
+      providers: [
+        Provider<ConcoursApiService>(
+          create: (_) => ConcoursApiService(client: http.Client()),
+        ),
+        ChangeNotifierProvider<ConcoursProvider>(
+          create: (context) =>
+              ConcoursProvider(apiService: context.read<ConcoursApiService>()),
+        ),
+      ],
+
+      child: MaterialApp(
+        title: AppConstants.appName,
+        debugShowCheckedModeBanner: false,
+        theme: AppTheme.lightTheme,
+        home: const SplashEntry(),
+      ),
     );
   }
 }
@@ -30,15 +47,22 @@ class SplashEntry extends StatefulWidget {
   State<SplashEntry> createState() => _SplashEntryState();
 }
 
-class _SplashEntryState extends State<SplashEntry> with SingleTickerProviderStateMixin {
+class _SplashEntryState extends State<SplashEntry>
+    with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _animation;
 
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(duration: const Duration(seconds: 2), vsync: this);
-    _animation = Tween<double>(begin: 0.0, end: 1.0).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
+    _controller = AnimationController(
+      duration: const Duration(seconds: 2),
+      vsync: this,
+    );
+    _animation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
     _controller.forward();
 
     Future.delayed(const Duration(seconds: 3), () {
@@ -47,7 +71,8 @@ class _SplashEntryState extends State<SplashEntry> with SingleTickerProviderStat
           PageRouteBuilder(
             pageBuilder: (_, __, ___) => const HomeScreen(),
             transitionDuration: const Duration(milliseconds: 800),
-            transitionsBuilder: (_, a, __, c) => FadeTransition(opacity: a, child: c),
+            transitionsBuilder: (_, a, __, c) =>
+                FadeTransition(opacity: a, child: c),
           ),
         );
       }
@@ -73,13 +98,27 @@ class _SplashEntryState extends State<SplashEntry> with SingleTickerProviderStat
               Container(
                 width: 130,
                 height: 130,
-                decoration: const BoxDecoration(color: AppConstants.secondary, shape: BoxShape.circle),
+                decoration: const BoxDecoration(
+                  color: AppConstants.secondary,
+                  shape: BoxShape.circle,
+                ),
                 child: const Icon(Icons.star, size: 90, color: Colors.white),
               ),
               const SizedBox(height: 30),
-              Text("Dzumevi", style: TextStyle(fontSize: 50, fontWeight: FontWeight.bold, color: Colors.white, letterSpacing: 4)),
+              Text(
+                "Dzumevi",
+                style: TextStyle(
+                  fontSize: 50,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                  letterSpacing: 4,
+                ),
+              ),
               const SizedBox(height: 10),
-              Text("Votez avec votre cœur", style: TextStyle(fontSize: 18, color: AppConstants.secondary)),
+              Text(
+                "Votez avec votre cœur",
+                style: TextStyle(fontSize: 18, color: AppConstants.secondary),
+              ),
             ],
           ),
         ),
