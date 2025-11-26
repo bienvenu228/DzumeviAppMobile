@@ -2,44 +2,49 @@
 class Candidat {
   final int id;
   final String firstname;
-  final String matricule;
-  final String? description;
+  final String lastname;
+  final String description;
   final String categorie;
+  final String matricule;
+  final int votes;
   final String? photo;
-  final int voteId;
-  final String? createdAt;
-  final String? updatedAt;
 
   Candidat({
     required this.id,
     required this.firstname,
-    this.matricule,
-    this.description,
-    this.categorie,
+    required this.lastname,
+    required this.description,
+    required this.categorie,
+    required this.matricule,
+    required this.votes,
     this.photo,
-    required this.voteId,
-    this.createdAt,
-    this.updatedAt,
   });
+
+  String get fullName => '$firstname $lastname';
 
   factory Candidat.fromJson(Map<String, dynamic> json) {
     return Candidat(
       id: json['id'] ?? 0,
-      firstname: json['firstname']?.toString() ?? 'Nom inconnu', // Correction ici
-      matricule: json['matricule']?.toString(),
-      description: json['description']?.toString(),
-      categorie: json['categorie']?.toString(),
-      photo: json['photo']?.toString(),
-      voteId: json['vote_id'] ?? 0,
-      createdAt: json['created_at']?.toString(),
-      updatedAt: json['updated_at']?.toString(),
+      firstname: json['firstname'] ?? '',
+      lastname: json['lastname'] ?? '',
+      description: json['description'] ?? '',
+      categorie: json['categorie'] ?? '',
+      matricule: json['matricule'] ?? '',
+      votes: json['votes'] ?? 0,
+      photo: json['photo'],
     );
   }
 
-  String get fullPhotoUrl {
-    if (photo == null || photo!.isEmpty) {
-      return '';
-    }
-    return "http://192.168.0.212/Dzumevi_APi/public/storage/$photo";
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'firstname': firstname,
+      'lastname': lastname,
+      'description': description,
+      'categorie': categorie,
+      'matricule': matricule,
+      'votes': votes,
+      'photo': photo,
+    };
   }
 }
