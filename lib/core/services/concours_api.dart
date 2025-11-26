@@ -13,7 +13,7 @@ class ConcoursApiService {
   Future<List<Concours>> getAllConcours() async {
     try {
       final response = await client.get(
-        Uri.parse('$baseUrl/concours'),
+        Uri.parse('$baseUrl/concours/actifs'),
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
