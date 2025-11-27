@@ -4,285 +4,229 @@ import '../core/constants.dart';
 
 class CandidatCard extends StatelessWidget {
   final Candidat candidat;
-  final VoidCallback? onTap;
+  final VoidCallback onTap;
   final bool showProgress;
   final int totalVotesConcours;
-  final bool showVotes;
 
   const CandidatCard({
     Key? key,
     required this.candidat,
-    this.onTap,
+    required this.onTap,
     this.showProgress = false,
-    this.totalVotesConcours = 0,
-    this.showVotes = true,
+    required this.totalVotesConcours,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    double pourcentage = totalVotesConcours > 0
-        ? (candidat.votes / totalVotesConcours) * 100
-        : 0;
-
     return Card(
-      elevation: 6,
-      shadowColor: Colors.black12,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+      elevation: 4,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+      ),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(16),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Photo avec badge de votes
-            Stack(
-              children: [
-                // Image de fond
-                ClipRRect(
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-                  child: Container(
-                    height: 160,
-                    width: double.infinity,
-                    color: AppConstants.primary.withOpacity(0.1),
-                    child: _buildPhoto(context),
-                  ),
-                ),
-                
-                // Badge de votes
-                if (showVotes)
-                  Positioned(
-                    top: 12,
-                    right: 12,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(20),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.1),
-                            blurRadius: 8,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.how_to_vote,
-                            size: 16,
-                            color: AppConstants.primary,
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            candidat.votes.toString(),
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.bold,
-                              color: AppConstants.primary,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-
-            // Contenu texte
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Nom du candidat
-                  Text(
-                    '${candidat.firstname} ${candidat.lastname}',
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      height: 1.2,
-                    ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-
-                  const SizedBox(height: 4),
-
-                  // Catégorie
-                  Text(
-                    candidat.categorie,
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: AppConstants.primary,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-
-                  const SizedBox(height: 8),
-
-                  // Description
-                  if (candidat.description.isNotEmpty)
-                    Text(
-                      candidat.description,
-                      style: const TextStyle(
-                        fontSize: 13,
-                        color: Colors.grey,
-                        height: 1.4,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-
-                  const SizedBox(height: 12),
-
-                  // Barre de progression (si activée)
-                  if (showProgress && totalVotesConcours > 0) ...[
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              'Progression',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: Colors.grey[600],
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                            Text(
-                              '${pourcentage.toStringAsFixed(1)}%',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: AppConstants.primary,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 6),
-                        Container(
-                          height: 6,
-                          decoration: BoxDecoration(
-                            color: Colors.grey[200],
-                            borderRadius: BorderRadius.circular(3),
-                          ),
-                          child: Stack(
-                            children: [
-                              LayoutBuilder(
-                                builder: (context, constraints) {
-                                  return Container(
-                                    width: constraints.maxWidth * (pourcentage / 100),
-                                    decoration: BoxDecoration(
-                                      gradient: LinearGradient(
-                                        colors: [
-                                          AppConstants.primary,
-                                          AppConstants.secondary,
-                                        ],
-                                      ),
-                                      borderRadius: BorderRadius.circular(3),
-                                    ),
-                                  );
-                                },
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          '${candidat.votes} votes sur $totalVotesConcours',
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: Colors.grey[500],
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                  ],
-
-                  // Bouton de vote
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: onTap,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppConstants.primary,
-                        foregroundColor: Colors.white,
-                        elevation: 2,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                      ),
-                      child: const Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.how_to_vote, size: 18),
-                          SizedBox(width: 8),
-                          Text(
-                            'Voter',
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
+            // Photo du candidat
+            _buildPhotoSection(),
+            
+            // Informations du candidat
+            _buildInfoSection(),
+            
+            // Barre de progression (si activée)
+            if (showProgress) _buildProgressSection(),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildPhoto(BuildContext context) {
-    if (candidat.photo != null && candidat.photo!.isNotEmpty) {
-      return Image.network(
-        candidat.photo!,
-        fit: BoxFit.cover,
-        errorBuilder: (context, error, stackTrace) {
-          return _buildDefaultAvatar();
-        },
-        loadingBuilder: (context, child, loadingProgress) {
-          if (loadingProgress == null) return child;
-          return Center(
-            child: CircularProgressIndicator(
-              value: loadingProgress.expectedTotalBytes != null
-                  ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
-                  : null,
+  Widget _buildPhotoSection() {
+    return Container(
+      height: 120,
+      decoration: BoxDecoration(
+        borderRadius: const BorderRadius.only(
+          topLeft: Radius.circular(16),
+          topRight: Radius.circular(16),
+        ),
+        image: candidat.photoUrl != null
+            ? DecorationImage(
+                image: NetworkImage(candidat.photoUrl!),
+                fit: BoxFit.cover,
+              )
+            : const DecorationImage(
+                image: AssetImage('assets/images/1.jpg'),
+                fit: BoxFit.cover,
+              ),
+      ),
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: const BorderRadius.only(
+            topLeft: Radius.circular(16),
+            topRight: Radius.circular(16),
+          ),
+          gradient: LinearGradient(
+            begin: Alignment.bottomCenter,
+            end: Alignment.topCenter,
+            colors: [
+              Colors.black.withOpacity(0.6),
+              Colors.transparent,
+            ],
+          ),
+        ),
+        child: Align(
+          alignment: Alignment.bottomLeft,
+          child: Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: AppConstants.primary,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                '${candidat.votes} votes',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+ Widget _buildInfoSection() {
+    return Padding(
+      padding: const EdgeInsets.all(12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Nom du candidat (utilise fullName)
+          Text(
+            candidat.fullName, // Utilise fullName au lieu de name
+            style: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: Colors.black87,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          
+          const SizedBox(height: 4),
+          
+          // Matricule
+          Text(
+            candidat.matricule,
+            style: const TextStyle(
+              fontSize: 12,
+              color: Colors.grey,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          
+          const SizedBox(height: 4),
+          
+          // Catégorie
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+            decoration: BoxDecoration(
+              color: AppConstants.secondary.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(
+                color: AppConstants.secondary.withOpacity(0.3),
+                width: 1,
+              ),
+            ),
+            child: Text(
+              candidat.categorie,
+              style: TextStyle(
+                fontSize: 10,
+                color: AppConstants.secondary,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+          
+          const SizedBox(height: 6),
+          
+          // Description (utilise safeDescription)
+          Text(
+            candidat.safeDescription, // Utilise safeDescription
+            style: const TextStyle(
+              fontSize: 12,
+              color: Colors.grey,
+            ),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ],
+      ),
+    );
+  }
+  Widget _buildProgressSection() {
+    final percentage = totalVotesConcours > 0 
+        ? (candidat.votes / totalVotesConcours) * 100 
+        : 0;
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Pourcentage
+          Text(
+            '${percentage.toStringAsFixed(1)}%',
+            style: const TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
               color: AppConstants.primary,
             ),
-          );
-        },
-      );
-    }
-    
-    return _buildDefaultAvatar();
-  }
-
-  Widget _buildDefaultAvatar() {
-    return Center(
-      child: Container(
-        width: 80,
-        height: 80,
-        decoration: BoxDecoration(
-          color: AppConstants.primary.withOpacity(0.2),
-          shape: BoxShape.circle,
-        ),
-        child: Icon(
-          Icons.person,
-          size: 40,
-          color: AppConstants.primary.withOpacity(0.7),
-        ),
+          ),
+          
+          const SizedBox(height: 4),
+          
+          // Barre de progression
+          Container(
+            height: 6,
+            decoration: BoxDecoration(
+              color: Colors.grey[200],
+              borderRadius: BorderRadius.circular(3),
+            ),
+            child: Stack(
+              children: [
+                // Fond de la barre
+                Container(
+                  decoration: BoxDecoration(
+                    color: Colors.grey[200],
+                    borderRadius: BorderRadius.circular(3),
+                  ),
+                ),
+                
+                // Progression
+                FractionallySizedBox(
+                  widthFactor: percentage / 100,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          AppConstants.primary,
+                          AppConstants.secondary,
+                        ],
+                      ),
+                      borderRadius: BorderRadius.circular(3),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

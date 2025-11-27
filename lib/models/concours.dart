@@ -1,53 +1,52 @@
-import 'package:dzumevimobile/core/enums/concours_statut.dart';
-
 class Concours {
   final int id;
   final String name;
   final String description;
-  final DateTime date;
-  final DateTime echeance;
-  final ConcoursStatut statut;
+  final DateTime dateDebut;
+  final DateTime dateFin;
+  final String statut;
+  final String? imageUrl;
+  final double prixParVote;
   final int nombreCandidats;
   final int nombreVotes;
+  final double totalRecettes;
+  final bool isActive;
 
   Concours({
     required this.id,
     required this.name,
     required this.description,
-    required this.date,
-    required this.echeance,
+    required this.dateDebut,
+    required this.dateFin,
     required this.statut,
-    this.nombreCandidats = 0,
-    this.nombreVotes = 0,
+    this.imageUrl,
+    required this.prixParVote,
+    required this.nombreCandidats,
+    required this.nombreVotes,
+    required this.totalRecettes,
+    required this.isActive,
   });
 
   factory Concours.fromJson(Map<String, dynamic> json) {
     return Concours(
-      id: json['id'] ?? 0,
-      name: json['name'] ?? '',
-      description: json['description'] ?? '',
-      date: json['date'] != null ? DateTime.parse(json['date']) : DateTime.now(),
-      echeance: json['echeance'] != null ? DateTime.parse(json['echeance']) : DateTime.now(),
-      statut: ConcoursStatut.fromString(json['statut'] ?? ''),
+      id: json['id'],
+      name: json['name'],
+      description: json['description'],
+      dateDebut: DateTime.parse(json['date_debut']),
+      dateFin: DateTime.parse(json['date_fin']),
+      statut: json['statut'],
+      imageUrl: json['image_url'],
+      prixParVote: double.parse(json['prix_par_vote'].toString()),
       nombreCandidats: json['nombre_candidats'] ?? 0,
       nombreVotes: json['nombre_votes'] ?? 0,
+      totalRecettes: double.parse(json['total_recettes']?.toString() ?? '0'),
+      isActive: json['is_active'] ?? true,
     );
   }
 
-  Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'name': name,
-      'description': description,
-      'date': date.toIso8601String(),
-      'echeance': echeance.toIso8601String(),
-      'statut': statut.value,
-      'nombre_candidats': nombreCandidats,
-      'nombre_votes': nombreVotes,
-    };
+  // Méthode utilitaire pour vérifier si le concours est actif
+  bool get estActif {
+    final now = DateTime.now();
+    return isActive && dateDebut.isBefore(now) && dateFin.isAfter(now);
   }
-
-  bool get isActive => statut == ConcoursStatut.enCours;
-  bool get isComing => statut == ConcoursStatut.aVenir;
-  bool get isFinished => statut == ConcoursStatut.passe;
 }

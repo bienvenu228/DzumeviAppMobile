@@ -1,189 +1,248 @@
-// lib/screens/candidats_screen.dart
 import 'package:dzumevimobile/core/services/concours_api.dart';
 import 'package:flutter/material.dart';
-import 'package:dzumevimobile/models/concours.dart';
-import 'package:dzumevimobile/models/candidat.dart';
-import 'package:http/http.dart' as http;
 import '../core/constants.dart';
+import '../models/concours.dart';
+import '../models/candidat.dart';
+import '../widgets/candidat_card.dart';
+import 'vote_screen.dart';
 
-class CandidatsScreen extends StatefulWidget {
+class ConcoursDetailScreen extends StatefulWidget {
   final Concours concours;
-
-  const CandidatsScreen({Key? key, required this.concours}) : super(key: key);
+  const ConcoursDetailScreen({Key? key, required this.concours}) : super(key: key);
 
   @override
-  State<CandidatsScreen> createState() => _CandidatsScreenState();
+  State<ConcoursDetailScreen> createState() => _ConcoursDetailScreenState();
 }
 
-class _CandidatsScreenState extends State<CandidatsScreen> {
-  late ConcoursApiService apiService;
-  List<Candidat> candidats = [];
-  bool isLoading = true;
-  String error = '';
+class _ConcoursDetailScreenState extends State<ConcoursDetailScreen> {
+  List<Candidat> _candidats = [];
+  bool _isLoading = true;
+  String _error = '';
 
   @override
   void initState() {
     super.initState();
-    apiService = ConcoursApiService(client: http.Client());
     _loadCandidats();
   }
 
   Future<void> _loadCandidats() async {
-    setState(() {
-      isLoading = true;
-      error = '';
-    });
-
     try {
-      final data = await apiService.getCandidatesByConcours(widget.concours.id);
       setState(() {
-        candidats = data;
-        isLoading = false;
+        _isLoading = true;
+        _error = '';
       });
+
+      final candidats = await ApiService.getCandidatsByConcours(widget.concours.id);
+      
+      setState(() {
+        _candidats = candidats;
+      });
+      
     } catch (e) {
       setState(() {
-        error = e.toString();
-        isLoading = false;
+        _error = 'Erreur lors du chargement des candidats: $e';
+      });
+    } finally {
+      setState(() {
+        _isLoading = false;
       });
     }
   }
 
-  void _returnWithCandidats() {
-    Navigator.pop(context, candidats); // renvoie la liste à HomeScreen
-  }
-
-  void _voteForCandidat(Candidat candidat) async {
-    // Logique de vote locale (incrémentation temporaire)
-    setState(() {
-      // candidat.votes += 1; // attention: tu devras gérer l'API pour vrai vote
-    });
-
-    // SnackBar pour confirmation
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text("Vote pour ${candidat.fullName} enregistré !"),
-        backgroundColor: Colors.green,
-        duration: const Duration(seconds: 2),
+  void _onCandidatTap(Candidat candidat) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => PaiementScreen(
+          candidat: candidat,
+          concours: widget.concours,
+        ),
       ),
     );
-
-    // TODO: Ici, appeler ton API pour enregistrer le vote réellement
-    // await apiService.voteForCandidate(candidat.id);
   }
 
   @override
   Widget build(BuildContext context) {
+    final totalVotesConcours = _candidats.fold(0, (sum, c) => sum + c.votes);
+    
     return Scaffold(
       backgroundColor: AppConstants.background,
       appBar: AppBar(
-        title: Text(widget.concours.name),
-        backgroundColor: AppConstants.primary,
-        foregroundColor: Colors.white,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: _returnWithCandidats, // bouton retour personnalisé
-        ),
-      ),
-      body: RefreshIndicator(
-        onRefresh: _loadCandidats,
-        backgroundColor: AppConstants.background,
-        color: AppConstants.primary,
-        child: _buildBody(),
-      ),
-    );
-  }
-
-  Widget _buildBody() {
-    if (isLoading) {
-      return const Center(child: CircularProgressIndicator());
-    }
-
-    if (error.isNotEmpty) {
-      return _buildEmptyState("Erreur de chargement", error, _loadCandidats);
-    }
-
-    if (candidats.isEmpty) {
-      return _buildEmptyState(
-        "Aucun candidat",
-        "Ce concours n'a aucun candidat pour le moment",
-        _loadCandidats,
-      );
-    }
-
-    return ListView.builder(
-      padding: const EdgeInsets.all(16),
-      itemCount: candidats.length,
-      itemBuilder: (context, index) {
-        final candidat = candidats[index];
-        return _buildCandidatCard(candidat);
-      },
-    );
-  }
-
-  Widget _buildCandidatCard(Candidat candidat) {
-    return Card(
-      elevation: 6,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      margin: const EdgeInsets.only(bottom: 16),
-      child: ListTile(
-        contentPadding: const EdgeInsets.all(16),
-        leading: CircleAvatar(
-          radius: 28,
-          backgroundColor: AppConstants.primary.withOpacity(0.2),
-          backgroundImage:
-              candidat.photo != null && candidat.photo!.isNotEmpty
-                  ? NetworkImage(candidat.photo!)
-                  : null,
-          child: (candidat.photo == null || candidat.photo!.isEmpty)
-              ? const Icon(Icons.person, size: 28, color: Colors.white)
-              : null,
-        ),
         title: Text(
-          candidat.fullName,
+          widget.concours.name,
           style: const TextStyle(
             fontWeight: FontWeight.bold,
             fontSize: 18,
           ),
         ),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (candidat.categorie.isNotEmpty)
-              Text(
-                candidat.categorie,
-                style: TextStyle(
-                  fontSize: 14,
-                  color: AppConstants.primary,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            const SizedBox(height: 4),
-            Text(
-              "${candidat.votes} vote${candidat.votes > 1 ? 's' : ''}",
-              style: const TextStyle(fontSize: 14, color: Colors.grey),
-            ),
+        backgroundColor: AppConstants.primary,
+        foregroundColor: Colors.white,
+        elevation: 0,
+        centerTitle: true,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: _loadCandidats,
+          ),
+        ],
+      ),
+      body: _buildBody(totalVotesConcours),
+    );
+  }
+
+  Widget _buildBody(int totalVotes) {
+    if (_isLoading) {
+      return const Center(
+        child: CircularProgressIndicator(),
+      );
+    }
+
+    if (_error.isNotEmpty) {
+      return _buildErrorState();
+    }
+
+    if (_candidats.isEmpty) {
+      return _buildEmptyState();
+    }
+
+    return Column(
+      children: [
+        _buildHeader(totalVotes),
+        Expanded(
+          child: _buildCandidatsGrid(totalVotes),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildHeader(int totalVotes) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            AppConstants.primary.withOpacity(0.1),
+            AppConstants.secondary.withOpacity(0.05),
           ],
         ),
-        trailing: ElevatedButton(
-          onPressed: () => _voteForCandidat(candidat),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: AppConstants.primary,
-            foregroundColor: Colors.white,
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-          ),
-          child: const Text(
-            "Voter",
-            style: TextStyle(fontWeight: FontWeight.bold),
+        border: Border(
+          bottom: BorderSide(
+            color: AppConstants.primary.withOpacity(0.2),
+            width: 1,
           ),
         ),
+      ),
+      child: Column(
+        children: [
+          Text(
+            "Votez avec votre Mobile Money",
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+              color: AppConstants.primary,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          
+          const SizedBox(height: 12),
+          
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            decoration: BoxDecoration(
+              color: AppConstants.primary,
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Text(
+              "${widget.concours.prixParVote.toInt()} FCFA = 1 VOTE",
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+            ),
+          ),
+          
+          const SizedBox(height: 16),
+          
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              _buildStatItem(
+                "Candidats",
+                _candidats.length.toString(),
+                Icons.people,
+              ),
+              _buildStatItem(
+                "Total Votes",
+                totalVotes.toString(),
+                Icons.how_to_vote,
+              ),
+              _buildStatItem(
+                "Recettes",
+                "${(totalVotes * widget.concours.prixParVote).toInt()} FCFA",
+                Icons.attach_money,
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildEmptyState(String title, String message, VoidCallback onRetry) {
+  Widget _buildStatItem(String label, String value, IconData icon) {
+    return Column(
+      children: [
+        Icon(icon, size: 20, color: AppConstants.primary),
+        const SizedBox(height: 4),
+        Text(
+          value,
+          style: const TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 10,
+            color: Colors.grey,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCandidatsGrid(int totalVotes) {
+    return RefreshIndicator(
+      onRefresh: _loadCandidats,
+      backgroundColor: AppConstants.background,
+      color: AppConstants.primary,
+      child: GridView.builder(
+        padding: const EdgeInsets.all(16),
+        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: MediaQuery.of(context).size.width > 600 ? 3 : 2,
+          childAspectRatio: 0.75,
+          crossAxisSpacing: 16,
+          mainAxisSpacing: 16,
+        ),
+        itemCount: _candidats.length,
+        itemBuilder: (context, index) {
+          final candidat = _candidats[index];
+          return CandidatCard(
+            candidat: candidat,
+            onTap: () => _onCandidatTap(candidat),
+            showProgress: true,
+            totalVotesConcours: totalVotes > 0 ? totalVotes : 1,
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildErrorState() {
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32),
@@ -191,32 +250,30 @@ class _CandidatsScreenState extends State<CandidatsScreen> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
-              Icons.event_busy,
-              size: 80,
-              color: AppConstants.primary.withOpacity(0.7),
+              Icons.error_outline,
+              size: 64,
+              color: AppConstants.error,
             ),
-            const SizedBox(height: 20),
-            Text(
-              title,
-              textAlign: TextAlign.center,
+            const SizedBox(height: 16),
+            const Text(
+              "Erreur de chargement",
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
-                color: Colors.grey[700],
               ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 8),
             Text(
-              message,
-              textAlign: TextAlign.center,
-              style: TextStyle(
+              _error,
+              style: const TextStyle(
                 fontSize: 16,
-                color: Colors.grey[600],
+                color: Colors.grey,
               ),
+              textAlign: TextAlign.center,
             ),
             const SizedBox(height: 24),
             ElevatedButton(
-              onPressed: onRetry,
+              onPressed: _loadCandidats,
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppConstants.primary,
                 foregroundColor: Colors.white,
@@ -225,10 +282,55 @@ class _CandidatsScreenState extends State<CandidatsScreen> {
                   borderRadius: BorderRadius.circular(12),
                 ),
               ),
-              child: const Text(
-                "Réessayer",
-                style: TextStyle(fontWeight: FontWeight.w600),
+              child: const Text("Réessayer"),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEmptyState() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.people_outline,
+              size: 80,
+              color: AppConstants.primary.withOpacity(0.5),
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              "Aucun candidat inscrit",
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
               ),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              "Aucun candidat n'est encore inscrit à ce concours.\nRevenez plus tard.",
+              style: TextStyle(
+                fontSize: 16,
+                color: Colors.grey,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 24),
+            ElevatedButton(
+              onPressed: _loadCandidats,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppConstants.primary,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: const Text("Actualiser"),
             ),
           ],
         ),
