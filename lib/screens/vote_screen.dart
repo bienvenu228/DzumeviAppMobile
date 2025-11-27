@@ -45,7 +45,7 @@ class PaiementScreen extends StatelessWidget {
                       radius: 30,
                       backgroundImage: candidat.photo != null 
                           ? NetworkImage(candidat.photo!) 
-                          : const AssetImage('assets/default_avatar.png') as ImageProvider,
+                          : const AssetImage('assets/images/1.jpg') as ImageProvider,
                       backgroundColor: Colors.grey[200],
                     ),
                     const SizedBox(width: 16),
@@ -54,7 +54,7 @@ class PaiementScreen extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            candidat.fullName,
+                            "${candidat.firstname} ${candidat.lastname}",
                             style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                           ),
                           Text(

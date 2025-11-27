@@ -1,11 +1,10 @@
-import 'package:dzumevimobile/core/provider/concours.dart';
-import 'package:dzumevimobile/screens/vote_screen.dart';
+import 'package:dzumevimobile/core/services/concours_api.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import '../core/constants.dart';
 import '../models/concours.dart';
 import '../models/candidat.dart';
 import '../widgets/candidat_card.dart';
+import 'vote_screen.dart';
 
 class ConcoursDetailScreen extends StatefulWidget {
   final Concours concours;
@@ -19,7 +18,6 @@ class _ConcoursDetailScreenState extends State<ConcoursDetailScreen> {
   List<Candidat> _candidats = [];
   bool _isLoading = true;
   String _error = '';
-  int _totalVotes = 0;
 
   @override
   void initState() {
@@ -28,62 +26,17 @@ class _ConcoursDetailScreenState extends State<ConcoursDetailScreen> {
   }
 
   Future<void> _loadCandidats() async {
-    final provider = context.read<ConcoursProvider>();
-    
     try {
       setState(() {
         _isLoading = true;
         _error = '';
       });
 
-      // Simuler le chargement des candidats - À adapter avec votre API
-      await Future.delayed(const Duration(milliseconds: 500));
+      final candidats = await ApiService.getCandidatsByConcours(widget.concours.id);
       
-      // Données mockées - À remplacer par votre appel API
-      _candidats = [
-        Candidat(
-          id: 1,
-          firstname: "Jean",
-          lastname: "Dupont",
-          description: "Artiste talentueux passionné par la musique",
-          categorie: "Musique",
-          matricule: "MAT001",
-          votes: 150,
-          photo: "candidat1.jpg",
-        ),
-        Candidat(
-          id: 2,
-          firstname: "Marie",
-          lastname: "Martin",
-          description: "Danseuse étoile avec 10 ans d'expérience",
-          categorie: "Danse",
-          matricule: "MAT002",
-          votes: 200,
-          photo: "candidat2.jpg",
-        ),
-        Candidat(
-          id: 3,
-          firstname: "Pierre",
-          lastname: "Durand",
-          description: "Chanteur lyrique de renommée internationale",
-          categorie: "Chant",
-          matricule: "MAT003",
-          votes: 180,
-          photo: "candidat3.jpg",
-        ),
-        Candidat(
-          id: 4,
-          firstname: "Sophie",
-          lastname: "Leroy",
-          description: "Peintre contemporaine innovante",
-          categorie: "Arts visuels",
-          matricule: "MAT004",
-          votes: 120,
-          photo: "candidat4.jpg",
-        ),
-      ];
-
-      _totalVotes = _candidats.fold(0, (sum, c) => sum + c.votes);
+      setState(() {
+        _candidats = candidats;
+      });
       
     } catch (e) {
       setState(() {
@@ -110,6 +63,8 @@ class _ConcoursDetailScreenState extends State<ConcoursDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final totalVotesConcours = _candidats.fold(0, (sum, c) => sum + c.votes);
+    
     return Scaffold(
       backgroundColor: AppConstants.background,
       appBar: AppBar(
@@ -131,11 +86,11 @@ class _ConcoursDetailScreenState extends State<ConcoursDetailScreen> {
           ),
         ],
       ),
-      body: _buildBody(),
+      body: _buildBody(totalVotesConcours),
     );
   }
 
-  Widget _buildBody() {
+  Widget _buildBody(int totalVotes) {
     if (_isLoading) {
       return const Center(
         child: CircularProgressIndicator(),
@@ -152,18 +107,15 @@ class _ConcoursDetailScreenState extends State<ConcoursDetailScreen> {
 
     return Column(
       children: [
-        // En-tête informatif
-        _buildHeader(),
-        
-        // Liste des candidats
+        _buildHeader(totalVotes),
         Expanded(
-          child: _buildCandidatsGrid(),
+          child: _buildCandidatsGrid(totalVotes),
         ),
       ],
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildHeader(int totalVotes) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
@@ -185,7 +137,6 @@ class _ConcoursDetailScreenState extends State<ConcoursDetailScreen> {
       ),
       child: Column(
         children: [
-          // Titre
           Text(
             "Votez avec votre Mobile Money",
             style: TextStyle(
@@ -198,7 +149,6 @@ class _ConcoursDetailScreenState extends State<ConcoursDetailScreen> {
           
           const SizedBox(height: 12),
           
-          // Prix par vote
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             decoration: BoxDecoration(
@@ -206,7 +156,7 @@ class _ConcoursDetailScreenState extends State<ConcoursDetailScreen> {
               borderRadius: BorderRadius.circular(20),
             ),
             child: Text(
-              "100 FCFA = 1 VOTE",
+              "${widget.concours.prixParVote.toInt()} FCFA = 1 VOTE",
               style: const TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
@@ -217,7 +167,6 @@ class _ConcoursDetailScreenState extends State<ConcoursDetailScreen> {
           
           const SizedBox(height: 16),
           
-          // Statistiques
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
@@ -228,12 +177,12 @@ class _ConcoursDetailScreenState extends State<ConcoursDetailScreen> {
               ),
               _buildStatItem(
                 "Total Votes",
-                _totalVotes.toString(),
+                totalVotes.toString(),
                 Icons.how_to_vote,
               ),
               _buildStatItem(
                 "Recettes",
-                "${_totalVotes * 100} FCFA",
+                "${(totalVotes * widget.concours.prixParVote).toInt()} FCFA",
                 Icons.attach_money,
               ),
             ],
@@ -266,7 +215,7 @@ class _ConcoursDetailScreenState extends State<ConcoursDetailScreen> {
     );
   }
 
-  Widget _buildCandidatsGrid() {
+  Widget _buildCandidatsGrid(int totalVotes) {
     return RefreshIndicator(
       onRefresh: _loadCandidats,
       backgroundColor: AppConstants.background,
@@ -274,7 +223,7 @@ class _ConcoursDetailScreenState extends State<ConcoursDetailScreen> {
       child: GridView.builder(
         padding: const EdgeInsets.all(16),
         gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: MediaQuery.of(context).size.width > 600 ? 3 : 2,
+          crossAxisCount: MediaQuery.of(context).size.width > 600 ? 2 : 1,
           childAspectRatio: 0.75,
           crossAxisSpacing: 16,
           mainAxisSpacing: 16,
@@ -286,7 +235,7 @@ class _ConcoursDetailScreenState extends State<ConcoursDetailScreen> {
             candidat: candidat,
             onTap: () => _onCandidatTap(candidat),
             showProgress: true,
-            totalVotesConcours: _totalVotes > 0 ? _totalVotes : 1,
+            totalVotesConcours: totalVotes > 0 ? totalVotes : 1,
           );
         },
       ),

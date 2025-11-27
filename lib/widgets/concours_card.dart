@@ -17,9 +17,9 @@ class ConcoursCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
-      elevation: 6, // Utilisation de votre elevation
+      elevation: 6,
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)), // Votre border radius
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(16),
@@ -37,8 +37,8 @@ class ConcoursCard extends StatelessWidget {
                       concours.name,
                       style: TextStyle(
                         fontSize: 18,
-                        fontWeight: FontWeight.w600, // Votre typographie
-                        color: AppConstants.primary, // Votre couleur primaire
+                        fontWeight: FontWeight.w600,
+                        color: AppConstants.primary,
                       ),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
@@ -68,7 +68,7 @@ class ConcoursCard extends StatelessWidget {
                           ConcoursStatut.getDisplayText(concours.statut),
                           style: TextStyle(
                             fontSize: 12,
-                            fontWeight: FontWeight.w600, // Votre typographie
+                            fontWeight: FontWeight.w600,
                             color: ConcoursStatut.getColor(concours.statut),
                           ),
                         ),
@@ -94,19 +94,52 @@ class ConcoursCard extends StatelessWidget {
 
               const SizedBox(height: 16),
 
-              // Informations
+              // Informations de dates
               Row(
                 children: [
                   _buildInfoItem(
                     Icons.calendar_today,
-                    'Début: ${_formatDate(concours.date)}',
+                    'Début: ${_formatDate(concours.dateDebut)}',
                   ),
                   const SizedBox(width: 16),
                   _buildInfoItem(
                     Icons.event_available,
-                    'Fin: ${_formatDate(concours.echeance)}',
+                    'Fin: ${_formatDate(concours.dateFin)}',
                   ),
                 ],
+              ),
+
+              const SizedBox(height: 12),
+
+              // Prix par vote
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: AppConstants.secondary.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: AppConstants.secondary.withOpacity(0.3),
+                  ),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.attach_money,
+                      size: 14,
+                      color: AppConstants.secondary,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      '${concours.prixParVote.toInt()} FCFA = 1 VOTE',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: AppConstants.secondary,
+                      ),
+                    ),
+                  ],
+                ),
               ),
 
               const SizedBox(height: 12),
@@ -117,33 +150,36 @@ class ConcoursCard extends StatelessWidget {
                   _buildStatItem(
                     Icons.people,
                     '${concours.nombreCandidats} Candidats',
-                    context,
                   ),
                   const SizedBox(width: 16),
                   _buildStatItem(
                     Icons.how_to_vote,
                     '${concours.nombreVotes} Votes',
-                    context,
+                  ),
+                  const SizedBox(width: 16),
+                  _buildStatItem(
+                    Icons.monetization_on,
+                    '${concours.totalRecettes.toInt()} FCFA',
                   ),
                 ],
               ),
 
               const SizedBox(height: 16),
 
-              // Bouton d'action avec votre style de bouton
+              // Bouton d'action
               Container(
                 width: double.infinity,
                 height: 44,
                 decoration: BoxDecoration(
                   gradient: _getButtonGradient(concours.statut),
-                  borderRadius: BorderRadius.circular(12), // Votre border radius
+                  borderRadius: BorderRadius.circular(12),
                 ),
                 child: Center(
                   child: Text(
                     _getButtonText(concours.statut),
                     style: const TextStyle(
                       color: Colors.white,
-                      fontWeight: FontWeight.w600, // Votre typographie
+                      fontWeight: FontWeight.w600,
                       fontSize: 16,
                     ),
                   ),
@@ -175,25 +211,25 @@ class ConcoursCard extends StatelessWidget {
     );
   }
 
-  Widget _buildStatItem(IconData icon, String text, BuildContext context) {
+  Widget _buildStatItem(IconData icon, String text) {
     return Expanded(
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
         decoration: BoxDecoration(
-          color: AppConstants.primary.withOpacity(0.1), // Votre couleur primaire
+          color: AppConstants.primary.withOpacity(0.1),
           borderRadius: BorderRadius.circular(8),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 14, color: AppConstants.primary), // Votre couleur primaire
+            Icon(icon, size: 14, color: AppConstants.primary),
             const SizedBox(width: 4),
             Expanded(
               child: Text(
                 text,
                 style: TextStyle(
                   fontSize: 11,
-                  color: AppConstants.primary, // Votre couleur primaire
+                  color: AppConstants.primary,
                   fontWeight: FontWeight.w500,
                 ),
                 overflow: TextOverflow.ellipsis,
@@ -209,39 +245,37 @@ class ConcoursCard extends StatelessWidget {
     return '${date.day}/${date.month}/${date.year}';
   }
 
-  LinearGradient _getButtonGradient(ConcoursStatut statut) {
+  LinearGradient _getButtonGradient(String statut) {
     switch (statut) {
-      case ConcoursStatut.enCours:
+      case 'actif':
         return LinearGradient(
-          colors: [AppConstants.primary, AppConstants.secondary], // Vos couleurs primaire/secondaire
+          colors: [AppConstants.primary, AppConstants.secondary],
         );
-      case ConcoursStatut.aVenir:
+      case 'inactif':
         return const LinearGradient(
           colors: [Colors.orange, Colors.deepOrange],
         );
-      case ConcoursStatut.passe:
+      case 'termine':
         return const LinearGradient(
           colors: [Colors.grey, Colors.blueGrey],
+        );
+      default:
+        return LinearGradient(
+          colors: [AppConstants.primary, AppConstants.secondary],
         );
     }
   }
 
-  String _getButtonText(ConcoursStatut statut) {
+  String _getButtonText(String statut) {
     switch (statut) {
-      case ConcoursStatut.enCours:
+      case 'actif':
         return 'Voter Maintenant';
-      case ConcoursStatut.aVenir:
+      case 'inactif':
         return 'Bientôt Disponible';
-      case ConcoursStatut.passe:
+      case 'termine':
         return 'Concours Terminé';
+      default:
+        return 'Voir Détails';
     }
   }
-}
-
-// Extension pour accéder facilement aux couleurs du contexte
-extension BuildContextExtension on BuildContext {
-  Color get primary => Theme.of(this).primaryColor;
-  Color get secondary => Theme.of(this).colorScheme.secondary;
-  Color get background => Theme.of(this).colorScheme.background;
-  Color get surface => Theme.of(this).colorScheme.surface;
 }

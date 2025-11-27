@@ -1,58 +1,49 @@
-// lib/enums/concours_statut.dart
+// lib/core/enums/concours_statut.dart
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 
 enum ConcoursStatut {
-  enCours('en cours'),
-  passe('passé'),
-  aVenir('à venir');
+  actif,
+  inactif,
+  termine;
 
-  const ConcoursStatut(this.value);
-  
-  final String value;
-  
-  static ConcoursStatut fromString(String value) {
-    switch (value) {
-      case 'en cours':
-        return ConcoursStatut.enCours;
-      case 'passé':
-        return ConcoursStatut.passe;
-      case 'à venir':
-        return ConcoursStatut.aVenir;
+  static String getDisplayText(String statut) {
+    switch (statut) {
+      case 'actif':
+        return 'en cours';
+      case 'inactif':
+        return 'à venir';
+      case 'termine':
+        return 'passé';
       default:
-        return ConcoursStatut.aVenir;
-    }
-  }
-  
-  static Color getColor(ConcoursStatut statut) {
-    switch (statut) {
-      case ConcoursStatut.enCours:
-        return Colors.green;
-      case ConcoursStatut.passe:
-        return Colors.red;
-      case ConcoursStatut.aVenir:
-        return Colors.orange;
-    }
-  }
-  
-  static IconData getIcon(ConcoursStatut statut) {
-    switch (statut) {
-      case ConcoursStatut.enCours:
-        return Icons.play_circle_filled;
-      case ConcoursStatut.passe:
-        return Icons.check_circle;
-      case ConcoursStatut.aVenir:
-        return Icons.schedule;
+        return 'Inconnu';
     }
   }
 
-  static String getDisplayText(ConcoursStatut statut) {
+  static Color getColor(String statut) {
     switch (statut) {
-      case ConcoursStatut.enCours:
-        return 'En Cours';
-      case ConcoursStatut.passe:
-        return 'Terminé';
-      case ConcoursStatut.aVenir:
-        return 'À Venir';
+      case 'actif':
+        return Colors.green;
+      case 'inactif':
+        return Colors.orange;
+      case 'termine':
+        return Colors.grey;
+      default:
+        return Colors.blueGrey;
+    }
+  }
+
+  static IconData getIcon(String statut) {
+    switch (statut) {
+      case 'actif':
+        return Icons.play_circle_fill;
+      case 'inactif':
+        return Icons.pause_circle_filled;
+      case 'termine':
+        return Icons.check_circle;
+      default:
+        return Icons.help;
     }
   }
 }

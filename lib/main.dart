@@ -1,6 +1,8 @@
 
 import 'package:dzumevimobile/core/constants.dart';
+import 'package:dzumevimobile/core/provider/candidats.dart';
 import 'package:dzumevimobile/core/provider/concours.dart';
+import 'package:dzumevimobile/core/provider/paiement.dart';
 import 'package:dzumevimobile/core/services/concours_api.dart';
 import 'package:dzumevimobile/core/theme.dart';
 import 'package:dzumevimobile/screens/home_screen.dart';
@@ -18,15 +20,11 @@ class DzumeviApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MultiProvider(
+    return  MultiProvider(
       providers: [
-        Provider<ConcoursApiService>(
-          create: (_) => ConcoursApiService(client: http.Client()),
-        ),
-        ChangeNotifierProvider<ConcoursProvider>(
-          create: (context) =>
-              ConcoursProvider(apiService: context.read<ConcoursApiService>()),
-        ),
+        ChangeNotifierProvider(create: (_) => ConcoursProvider()),
+        ChangeNotifierProvider(create: (_) => CandidatProvider()),
+        ChangeNotifierProvider(create: (_) => PaiementProvider()),
       ],
 
       child: MaterialApp(
@@ -69,7 +67,7 @@ class _SplashEntryState extends State<SplashEntry>
       if (mounted) {
         Navigator.of(context).pushReplacement(
           PageRouteBuilder(
-            pageBuilder: (_, __, ___) => const HomeScreen(),
+            pageBuilder: (_, __, ___) => const ConcoursListScreen(),
             transitionDuration: const Duration(milliseconds: 800),
             transitionsBuilder: (_, a, __, c) =>
                 FadeTransition(opacity: a, child: c),
